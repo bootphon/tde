@@ -1,5 +1,7 @@
 *.py[cod]
 
+*.ipynb
+
 # C extensions
 *.so
 
@@ -40,3 +42,5 @@ output/*/index.html
 
 # Sphinx
 docs/_build
+/tde/ccss.c
+/tde/ccss.html
