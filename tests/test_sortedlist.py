@@ -52,13 +52,14 @@ def test_tuplelist():
         sl.index((3, 'b'))
 
 from pytest import list_of
-@pytest.mark.randomize(l=list_of(int))
+@pytest.mark.randomize(l=list_of(int), min_num=-10000, max_num=10000)
 def test_intlist1(l):
     sl = SortedList(l)
     assert(sorted(l) == sl._v)
     assert(sorted(l) == sl._k)
 
-@pytest.mark.randomize(l=list_of(int, min_items=1))
+@pytest.mark.randomize(l=list_of(int, min_items=1),
+                                 min_num=-10000, max_num=10000)
 def test_intlist2(l):
     el = l[:-1]
     e = l[-1]
@@ -74,13 +75,14 @@ def test_intlist2(l):
     assert(sorted(el) == sl._v)
     assert(sorted(el) == sl._k)
 
-@pytest.mark.randomize(l=list_of(float))
+@pytest.mark.randomize(l=list_of(float), min_num=-10000, max_num=10000)
 def test_floatlist1(l):
     sl = SortedList(l)
     assert(sorted(l) == sl._v)
     assert(sorted(l) == sl._k)
 
-@pytest.mark.randomize(l=list_of(float, min_items=1))
+@pytest.mark.randomize(l=list_of(float, min_items=1),
+                                 min_num=-10000, max_num=10000)
 def test_floatlist2(l):
     el = l[:-1]
     e = l[-1]
@@ -119,7 +121,7 @@ def test_stringlist2(l):
     assert(sorted(el) == sl._k)
 
 @pytest.mark.randomize(l1=list_of(str),
-                       l2=list_of(int))
+                       l2=list_of(int), min_num=-10000, max_num=10000)
 def test_tuplelist_random(l1, l2):
     zip1 = zip(l1, l2)
     l1 = l1[:len(zip1)]
