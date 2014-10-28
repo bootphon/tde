@@ -1,0 +1,7 @@
+wheel==0.23.0
+cython>=0.20.1
+numpy>=1.8.0
+scipy>=0.14.0
+numpydoc
+mock
+pytest>=2.6
