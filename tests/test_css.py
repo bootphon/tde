@@ -12,6 +12,15 @@ def test_empty():
     l2 = []
     assert(allcommonsubstrings(l1, l2) == [])
 
+def test_single_empty():
+    l1 = 'abcde'
+    assert(allcommonsubstrings(l1, same=True) == [])
+
+def test_single_nonempty():
+    l1 = 'abcdeabc'
+    expected = [(slice(0, 3, None), slice(5, 8, None)),
+                (slice(5, 8, None), slice(0, 3, None))]
+    assert(allcommonsubstrings(l1, minlength=3, same=True) == expected)
 
 def test_simple():
     l1 = 'abcde'
@@ -20,8 +29,8 @@ def test_simple():
     assert(l1[m1] == l2[m2])
 
 
-@pytest.mark.randomize(l1=list_of(int, min_items=100, max_items=100),
-                       l2=list_of(int, min_items=100, max_items=100),
+@pytest.mark.randomize(l1=list_of(int, min_items=10, max_items=100),
+                       l2=list_of(int, min_items=10, max_items=100),
                        choices=[0,1])
 def test_length(l1, l2):
     n = 4
@@ -30,16 +39,16 @@ def test_length(l1, l2):
         assert(slice2.stop - slice2.start >= n)
 
 
-@pytest.mark.randomize(l1=list_of(int, min_items=100, max_items=100),
-                       l2=list_of(int, min_items=100, max_items=100),
+@pytest.mark.randomize(l1=list_of(int, min_items=10, max_items=100),
+                       l2=list_of(int, min_items=10, max_items=100),
                        choices=[0,1])
 def test_equality(l1, l2):
     for slice1, slice2 in allcommonsubstrings(l1, l2, minlength=4):
         assert(l1[slice1] == l2[slice2])
 
 
-@pytest.mark.randomize(l1=list_of(int, min_items=100, max_items=100),
-                       l2=list_of(int, min_items=100, max_items=100),
+@pytest.mark.randomize(l1=list_of(int, min_items=10, max_items=100),
+                       l2=list_of(int, min_items=10, max_items=100),
                        choices=[0,1])
 def test_uniqueness(l1, l2):
     results = set()
