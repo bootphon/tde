@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 
 from tde.corpus import Interval, SegmentAnnotation, Corpus, \
-    interval_cmp, FragmentToken
+    interval_cmp, FragmentToken, FragmentType, ClassID, abuts_left
 
 class TestInterval(object):
     # This looks stupid, but it's good to test the wonky (in-)equalities that
@@ -14,6 +14,16 @@ class TestInterval(object):
     i1 = Interval(0., 0.5)
     i2 = Interval(0.5, 1.5)
     i3 = Interval(1.3, 1.4)
+
+    def test_abuts_left(self):
+        i1, i2, i3 = self.i1, self.i2, self.i3
+        assert (abuts_left(i1, i2))
+        assert (not abuts_left(i2, i1))
+        assert (not abuts_left(i2, i3))
+
+    def test_strrepr(self):
+        assert(str(self.i1) == '[0.0-0.5]')
+        assert(repr(self.i1) == '[0.0-0.5]')
 
     def test_overlap(self):
         i1, i2, i3 = self.i1, self.i2, self.i3
@@ -34,6 +44,14 @@ class TestInterval(object):
         assert(interval_cmp(i2, i1) == 1)
         assert(interval_cmp(i3, i1) == 1)
 
+    def test_not_enough_overlap(self):
+        i1 = Interval(0, 1)
+        i2 = Interval(0.98, 2)
+        assert (not i1.overlaps_with(i2))
+        assert (not i2.overlaps_with(i1))
+        assert (interval_cmp(i1, i2) == -1)
+        assert (interval_cmp(i2, i1) == 1)
+
     def test_cmp_eq(self):
         i1, i2, i3 = self.i1, self.i2, self.i3
         assert(interval_cmp(i1, i1) == 0)
@@ -46,6 +64,9 @@ class TestInterval(object):
     def test_badinterval(self):
         with pytest.raises(ValueError):
             Interval(1, 0)
+
+
+
 
 
 class TestSegmentAnnotation(object):
@@ -76,9 +97,53 @@ class TestSegmentAnnotation(object):
         assert(self.sa.tokens_at_interval(Interval(10, 11))
                == [])
 
+class TestFragmentToken(object):
+    def test_mark(self):
+        ft = FragmentToken('name', Interval(0, 1), 'markymark')
+        assert (ft.name == 'name')
+        assert (ft.interval == Interval(0,1))
+        assert (ft.mark == 'markymark')
+
+    def test_no_mark(self):
+        ft = FragmentToken('name', Interval(0, 1))
+        assert (ft.name == 'name')
+        assert (ft.interval == Interval(0,1))
+        assert (ft.mark is None)
+
+class TestFragmentType(object):
+    tokens = [
+        FragmentToken('wavfile1', Interval(0.0, 0.1), 'a'),
+        FragmentToken('wavfile1', Interval(0.1, 0.2), 'r'),
+        FragmentToken('wavfile1', Interval(0.2, 0.3), 'm'),
+        FragmentToken('wavfile1', Interval(0.3, 0.4), 's'),
+        FragmentToken('wavfile1', Interval(0.4, 0.5), 'a')]
+
+    def test_mark(self):
+        ft = FragmentType(self.tokens, 'markymark')
+        assert (ft.tokens == self.tokens)
+        assert (ft.mark == 'markymark')
+
+    def test_no_mark(self):
+        ft = FragmentType(self.tokens)
+        assert (ft.tokens == self.tokens)
+        assert (ft.mark is None)
+
+class TestClassID(object):
+    def test_mark(self):
+        cid = ClassID(1, 'markymark')
+        assert (cid.ID == 1)
+        assert (cid.mark == 'markymark')
+        assert (repr(cid) == 'ClassID(1(markymark))')
+
+    def test_no_mark(self):
+        cid = ClassID(1)
+        assert (cid.ID == 1)
+        assert (cid.mark is None)
+        assert (repr(cid) == 'ClassID(1)')
+
 
 class TestCorpus(object):
-    file_annotations = [SegmentAnnotation('wavfile1', [
+    segment_annotations = [SegmentAnnotation('wavfile1', [
         FragmentToken('wavfile1', Interval(0.0, 0.1), 'a'),
         FragmentToken('wavfile1', Interval(0.1, 0.2), 'r'),
         FragmentToken('wavfile1', Interval(0.2, 0.3), 'm'),
@@ -98,7 +163,14 @@ class TestCorpus(object):
         FragmentToken('wavfile2', Interval(0.4, 0.5), 'd'),
         FragmentToken('wavfile2', Interval(0.5, 0.6), 's')])]
 
-    ca = Corpus(file_annotations)
+    ca = Corpus(segment_annotations)
+
+    def test_len(self):
+        assert(len(self.ca) == 2)  #only 2 distinct fname keys
+
+    def test_getitem(self):
+        for i in range(len(self.ca)):
+            assert(self.ca['wavfile2'] == self.ca.segment_annotations['wavfile2'])
 
     def test_ca_intervals(self):
         exp_intervals = {'wavfile1': [Interval(0.0, 0.5), Interval(0.7, 1.3)],
@@ -114,3 +186,13 @@ class TestCorpus(object):
 
     def test_annotation_complex(self):
         assert(self.ca.annotation('wavfile1', Interval(0.7, 1.2)) == ['w', 'o', 'r', 'm', 's'])
+
+    def test_badtoken_fname(self):
+        with pytest.raises(KeyError):
+            self.ca.tokens('badfilename', 1)
+
+    def test_badtoken_interval(self):
+        with pytest.raises(ValueError):
+            self.ca.tokens('wavfile1', Interval(-10, -5))
+        with pytest.raises(ValueError):
+            self.ca.tokens('wavfile1', Interval(10, 20))

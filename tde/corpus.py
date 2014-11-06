@@ -9,20 +9,6 @@ import numpy as np
 
 from sortedlist import SortedList
 
-approx_eq = np.isclose
-
-def approx_lt(x, y, rtol=1e-5, atol=1e-8):
-    return x < y and not np.isclose(x, y, rtol=rtol, atol=atol)
-
-def approx_gt(x, y, rtol=1e-5, atol=1e-8):
-    return x > y and not np.isclose(x, y, rtol=rtol, atol=atol)
-
-def approx_le(x, y, rtol=1e-5, atol=1e-8):
-    return x < y or np.isclose(x, y, rtol=rtol, atol=atol)
-
-def approx_ge(x, y, rtol=1e-5, atol=1e-8):
-    return x > y or np.isclose(x, y, rtol=rtol, atol=atol)
-
 
 class Corpus(object):
     """Corpus annotation.
@@ -54,6 +40,19 @@ class Corpus(object):
         """
         return self.segment_annotations.keys()
 
+    def __eq__(self, other):
+        if sorted(self.keys()) != sorted(other.keys()):
+            return False
+        for k in sorted(self.keys()):
+            s = self.segment_annotations[k]
+            o = other.segment_annotations[k]
+            if len(s) != len(o):
+                return False
+            for i in xrange(len(s)):
+                if s[i] != o[i]:
+                    return False
+        return True
+
     def __len__(self):
         return len(self.segment_annotations)
 
@@ -65,6 +64,13 @@ class Corpus(object):
 
     def __contains__(self, key):
         return key in self.keys()
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.__dict__)
+
+    def __str__(self):
+        return '<Corpus {0} {1} {2} segments>'.format(
+            self.name, str(self.interval), len(self.segment_annotations))
 
     def annotation(self, name, interval):
         """Find the annotation covering an interval.
@@ -139,6 +145,37 @@ class SegmentAnnotation(object):
         self.interval = Interval(self.tokens[0].interval.start,
                                  self.tokens[-1].interval.end)
 
+    def __len__(self):
+        return len(self.tokens)
+
+    def __iter__(self):
+        return iter(self.tokens)
+
+    def __getitem__(self, i):
+        return self.tokens[i]
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.__dict__)
+
+    def __str__(self):
+        return '<SegmentAnnotation {0} {1} {2} tokens>'.format(
+            self.name, str(self.interval), len(self.tokens))
+
+    def __eq__(self, other):
+        if self.name != other.name:
+            return False
+        if self.interval != other.interval:
+            return False
+        if len(self.tokens) != len(other.tokens):
+            return False
+        for i in xrange(len(self.tokens)):
+            if self.tokens[i] != other.tokens[i]:
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def annotation_at_interval(self, interval):
         """Get the annotation corresponding to an interval.
 
@@ -176,21 +213,7 @@ class SegmentAnnotation(object):
             stop = len(self.tokens)
         return [x for x in self.tokens[start:stop]]
 
-    def __len__(self):
-        return len(self.tokens)
 
-    def __iter__(self):
-        return iter(self.tokens)
-
-    def __getitem__(self, i):
-        return self.tokens[i]
-
-    def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.__dict__)
-
-    def __str__(self):
-        return '<SegmentAnnotation {0} {1} {2} tokens>'.format(
-            self.name, str(self.interval), len(self.tokens))
 
 
 def annotation_cmp(a1, a2):
@@ -243,15 +266,6 @@ class FragmentToken(namedtuple('FragmentToken', ['name', 'interval', 'mark'])):
     def __repr__(self):
         return '%s(%r, %r, %r)' % (self.__class__.__name__,
                                  self.name, self.interval, self.mark)
-
-    def __eq__(self, other):
-        if self.name != other.name:
-            return False
-        if not self.interval == other.interval:
-            return False
-        if self.mark != other.mark:
-            return False
-        return True
 
     def __hash__(self):
         return hash(hash(self.name) ^
@@ -321,8 +335,8 @@ class Interval(object):
     """
     def __init__(self, start, end,
                  minimum_overlap=0.03, minimum_overlap_fraction=0.5):
-        if approx_lt(end, start):
-            raise ValueError('end must not be smaller than start')
+        if end < start:
+            raise ValueError('end must be greater than start')
         self.start = start
         self.end = end
         self.minimum_overlap = minimum_overlap
@@ -360,9 +374,9 @@ class Interval(object):
         o : double
             Returns the approximate overlap with `other` interval.
         """
-        if approx_lt(self.end, other.start):
+        if self.end < other.start:
             return 0.
-        if approx_gt(self.start, other.end):
+        if self.start > other.end:
             return 0.
         return min(self.end, other.end) - max(self.start, other.start)
 
@@ -384,12 +398,26 @@ class Interval(object):
 
         """
         over = self.overlap(other)
-        if approx_eq(over, 0.0):
+        if np.isclose(over, 0.0):
             return False
-        time_overlaps = approx_ge(over, self.minimum_overlap)
-        frac_overlaps = approx_ge(over,
-                                  self.minimum_overlap_fraction * len(other))
+        time_overlaps = over > self.minimum_overlap
+        frac_overlaps = over > self.minimum_overlap_fraction * len(other)
         return time_overlaps or frac_overlaps
+
+
+def abuts_left(i1, i2, tol=1e-3):
+    """Determine whether i1 is directly to the left of i2.
+
+    Parameters
+    ----------
+    i1, i2 : Interval
+
+    Returns
+    -------
+    b : boolean
+        True iff i1 is directly to the left of i2.
+    """
+    return np.isclose(i1.end, i2.start, atol=tol)
 
 
 def interval_cmp(i1, i2):
