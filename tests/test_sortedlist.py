@@ -2,37 +2,104 @@ import pytest
 
 from tde.sortedlist import SortedList
 
-def test_simplelist():
+def test_keysvalues():
     sl = SortedList([3, 6, 1, 7, 0])
-
     assert(sl._k == [0, 1, 3, 6, 7])
     assert(sl._v == [0, 1, 3, 6, 7])
 
+def test_keysvalues_empty():
+    sl = SortedList([])
+    assert(sl._k == [])
+    assert(sl._k == [])
+
+    with pytest.raises(ValueError):
+        sl.index(0)
+
+def test_indexfind_le():
+    sl = SortedList([3, 6, 1, 7, 0])
     assert(sl.index_le(3) == 2)
-    assert(sl.index_lt(3) == 1)
-    assert(sl.index_ge(3) == 2)
-    assert(sl.index_gt(3) == 3)
-
-    assert(sl.find_lt(3) == 1)
     assert(sl.find_le(4) == 3)
-    assert(sl.find_gt(3) == 6)
-    assert(sl.find_ge(4) == 6)
+    with pytest.raises(ValueError):
+        sl.index_le(-1)
+    with pytest.raises(ValueError):
+        sl.find_le(-1)
 
+def test_indexfind_lt():
+    sl = SortedList([3, 6, 1, 7, 0])
+    assert(sl.index_lt(3) == 1)
+    assert(sl.find_lt(3) == 1)
+    with pytest.raises(ValueError):
+        sl.index_lt(0)
+    with pytest.raises(ValueError):
+        sl.find_lt(0)
+
+def test_indexfind_ge():
+    sl = SortedList([3, 6, 1, 7, 0])
+    assert(sl.index_ge(3) == 2)
+    assert(sl.find_ge(4) == 6)
+    with pytest.raises(ValueError):
+        sl.index_ge(10)
+    with pytest.raises(ValueError):
+        sl.find_ge(10)
+
+def test_indexfind_gt():
+    sl = SortedList([3, 6, 1, 7, 0])
+    assert(sl.index_gt(3) == 3)
+    assert(sl.find_gt(3) == 6)
+    with pytest.raises(ValueError):
+        sl.index_gt(7)
+    with pytest.raises(ValueError):
+        sl.find_gt(7)
+
+def test_badindex():
+    sl = SortedList([3, 6, 1, 7, 0])
     with pytest.raises(ValueError):
         sl.index(4)
 
+def test_badremove():
+    sl = SortedList([3, 6, 1, 7, 0])
     with pytest.raises(ValueError):
         sl.remove(4)
 
-    assert(repr(sl) == '[0, 1, 3, 6, 7]')
-    assert(len(sl) == 5)
-    for item in sl:
-        assert(item in sl)
-    for ix, item in enumerate(sl):
-        assert(item == sl[ix])
+def test_insert():
+    sl = SortedList([3, 6, 1, 7, 0])
     sl.insert(4)
     assert(sl._k == [0, 1, 3, 4, 6, 7])
     assert(sl._v == [0, 1, 3, 4, 6, 7])
+
+def test_insert_duplicate():
+    sl = SortedList([3, 6, 1, 7, 0])
+    sl.insert(3)
+    assert(sl._k == [0, 1, 3, 3, 6, 7])
+    assert(sl._v == [0, 1, 3, 3, 6, 7])
+
+def test_extend():
+    sl = SortedList([3, 6, 1, 7, 0])
+    sl.extend([4, 5])
+    assert(sl._k == [0, 1, 3, 4, 5, 6, 7])
+    assert(sl._v == [0, 1, 3, 4, 5, 6, 7])
+
+def test_str_repr():
+    sl = SortedList([3, 6, 1, 7, 0])
+    assert(repr(sl) == '[0, 1, 3, 6, 7]')
+    assert(str(sl) == '[0, 1, 3, 6, 7]')
+
+def test_len():
+    sl = SortedList([3, 6, 1, 7, 0])
+    assert(len(sl) == 5)
+
+    sl.insert(4)
+    assert(len(sl) == 6)
+
+def test_contains():
+    sl = SortedList([3, 6, 1, 7, 0])
+    for item in sl:
+        assert(item in sl)
+
+def test_getitem():
+    sl = SortedList([3, 6, 1, 7, 0])
+    for ix, item in enumerate(sl):
+        assert(item == sl[ix])
 
 def test_tuplelist():
     data = [(3, 'a'), (4, 'v'), (1, 'z'), (5, 'b')]

@@ -18,7 +18,6 @@ class SortedList(object):
     key : func
         Compare elements with this function
 
-
     """
     def __init__(self, iterable=None, key=None):
         self._key_func = (lambda x: x) if key is None else key
