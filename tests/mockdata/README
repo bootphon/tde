@@ -1,0 +1,16 @@
+Contents of this directory:
+
+- mockcorpus_small.phn
+Small corpus file in phn layout
+
+- mockcorpus_small_gold
+Gold fragments extracted from mockcorpus_small.phn
+
+- mockcorpus_big.phn
+Bigger corpus file in phn layout
+
+- mockcorpus_big_gold
+Gold fragments extracted from mockcorpus_big.phn
+
+- mockcorpus_huge.phn
+Huge corpus file in phn layout

@@ -1,0 +1,16 @@
+Class 0
+wavfile1 0.700 1.000
+wavfile2 0.100 0.400
+
+Class 1
+wavfile1 0.900 1.300
+wavfile1 0.100 0.500
+
+Class 2
+wavfile1 0.100 0.400
+wavfile1 0.900 1.200
+
+Class 3
+wavfile1 0.200 0.500
+wavfile1 1.000 1.300
+

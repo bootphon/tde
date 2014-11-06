@@ -2,26 +2,11 @@
 """
 import re
 
-import numpy as np
-
-from corpus import FragmentToken, Corpus, SegmentAnnotation, Interval, ClassID
+from corpus import FragmentToken, Corpus, SegmentAnnotation, Interval, \
+    ClassID, abuts_left
 
 class ReadError(Exception):
     pass
-
-def abuts_left(i1, i2, tol=1e-3):
-    """Determine whether i1 is directly to the left of i2.
-
-    Parameters
-    ----------
-    i1, i2 : Interval
-
-    Returns
-    -------
-    b : boolean
-        True iff i1 is directly to the left of i2.
-    """
-    return np.isclose(i1.end, i2.start, atol=tol)
 
 
 def read_phone_file(filename):
@@ -53,10 +38,15 @@ def read_phone_file(filename):
         try:
             start = float(start)
             stop = float(stop)
-            interval_curr = Interval(start, stop)
         except ValueError:
             raise ReadError('could not convert string to float in line {1}: {0}'
                             .format(line, line_idx))
+        try:
+            interval_curr = Interval(start, stop)
+        except ValueError:
+            raise ReadError('invalid interval in line {0}: ({1:.3f} {2:.3f})'
+                            .format(line_idx, start, stop))
+
         token = FragmentToken(ID_curr, interval_curr, phone)
 
         if ID_prev is None:
@@ -94,6 +84,19 @@ def corpus_annotation_from_phone_file(filename):
 
     """
     tokenlists = read_phone_file(filename)
+    return tokenlists_to_corpus(tokenlists)
+
+def tokenlists_to_corpus(tokenlists):
+    """Convert a list of tokens to Corpus object
+
+    Parameters
+    ----------
+    tokenlists : list of list of FragmentToken
+
+    Returns :
+    c : Corpus
+
+    """
     fas = []  # FileAnnotations
     for tokenlist in tokenlists:
         fname = tokenlist[0].name
