@@ -15,6 +15,16 @@ class TestInterval(object):
     i2 = Interval(0.5, 1.5)
     i3 = Interval(1.3, 1.4)
 
+    def test_len(self):
+        # regression test. len() casts the call to object.__len__() to int.
+        # this is the wrong behavior for Interval
+        # as a solution, len(Interval) and Interval().__len__() should now
+        # raise and AttributeError
+        with pytest.raises(TypeError):
+            len(self.i1)
+        with pytest.raises(AttributeError):
+            self.i1.__len__()
+
     def test_abuts_left(self):
         i1, i2, i3 = self.i1, self.i2, self.i3
         assert (abuts_left(i1, i2))
@@ -66,15 +76,12 @@ class TestInterval(object):
             Interval(1, 0)
 
 
-
-
-
 class TestSegmentAnnotation(object):
-    tokenlist = [FragmentToken('wavfile1', Interval(0.0,0.1), 'a'),
+    tokenlist = (FragmentToken('wavfile1', Interval(0.0,0.1), 'a'),
                  FragmentToken('wavfile1', Interval(0.1,0.2), 'r'),
                  FragmentToken('wavfile1', Interval(0.2,0.3), 'm'),
                  FragmentToken('wavfile1', Interval(0.3,0.4), 's'),
-                 FragmentToken('wavfile1', Interval(0.4,0.5), 'a')]
+                 FragmentToken('wavfile1', Interval(0.4,0.5), 'a'))
     sa = SegmentAnnotation('', tokenlist)
 
     def test_annotation_at_interval(self):
@@ -93,7 +100,7 @@ class TestSegmentAnnotation(object):
         assert(self.sa.tokens_at_interval(Interval(0.1, 0.4))
                == self.tokenlist[1:4])
         assert(self.sa.tokens_at_interval(Interval(0.0, 0.05))
-               == [self.tokenlist[0]])
+               == (self.tokenlist[0],))
         assert(self.sa.tokens_at_interval(Interval(10, 11))
                == [])
 
@@ -105,7 +112,7 @@ class TestFragmentToken(object):
         assert (ft.mark == 'markymark')
 
     def test_no_mark(self):
-        ft = FragmentToken('name', Interval(0, 1))
+        ft = FragmentToken('name', Interval(0, 1), None)
         assert (ft.name == 'name')
         assert (ft.interval == Interval(0,1))
         assert (ft.mark is None)
@@ -124,7 +131,7 @@ class TestFragmentType(object):
         assert (ft.mark == 'markymark')
 
     def test_no_mark(self):
-        ft = FragmentType(self.tokens)
+        ft = FragmentType(self.tokens, None)
         assert (ft.tokens == self.tokens)
         assert (ft.mark is None)
 
@@ -136,7 +143,7 @@ class TestClassID(object):
         assert (repr(cid) == 'ClassID(1(markymark))')
 
     def test_no_mark(self):
-        cid = ClassID(1)
+        cid = ClassID(1, None)
         assert (cid.ID == 1)
         assert (cid.mark is None)
         assert (repr(cid) == 'ClassID(1)')
@@ -182,10 +189,10 @@ class TestCorpus(object):
         assert(exp_intervals == pred_intervals)
 
     def test_annotation_simple(self):
-        assert(self.ca.annotation('wavfile2', Interval(0.2, 0.5)) == ['o', 'r', 'd'])
+        assert(self.ca.annotation('wavfile2', Interval(0.2, 0.5)) == ('o', 'r', 'd'))
 
     def test_annotation_complex(self):
-        assert(self.ca.annotation('wavfile1', Interval(0.7, 1.2)) == ['w', 'o', 'r', 'm', 's'])
+        assert(self.ca.annotation('wavfile1', Interval(0.7, 1.2)) == ('w', 'o', 'r', 'm', 's'))
 
     def test_badtoken_fname(self):
         with pytest.raises(KeyError):

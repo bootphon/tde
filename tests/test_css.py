@@ -1,7 +1,26 @@
 import pytest
 from pytest import list_of
-from tde.acss import allcommonsubstrings
+from tde.acss import allcommonsubstrings, substrings
 
+class TestPairwiseSubstringCompletion(object):
+    pass
+
+class TestSubstrings(object):
+    def test_triv(self):
+        assert (list(substrings('abc', 3, 20)) == ['abc'])
+
+    def test_null(self):
+        assert (list(substrings('abc', 4, 20)) == [])
+
+    def test_string(self):
+        assert (set(list(substrings('abcde', 3, 20))) ==
+                set(['abc', 'abcd', 'abcde', 'bcd', 'bcde', 'cde']))
+
+    @pytest.mark.randomize(s1=str, minlength=int, maxlength=int)
+    def length_invariant(s1, minlength, maxlength):
+        l1 = len(s1)
+        for sub in substrings(s1, minlength):
+            assert (minlength <= len(sub) <= min(l1, maxlength))
 
 def test_empty():
     l1 = 'abcde'

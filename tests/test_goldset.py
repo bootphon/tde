@@ -28,13 +28,13 @@ class TestExtractSingle(object):
                 FragmentToken('wavfile1', Interval(0.9,1.3), ('r', 'm', 's', 'a'))),
                (FragmentToken('wavfile1', Interval(0.2,0.5), ('m', 's', 'a')),
                 FragmentToken('wavfile1', Interval(1.0,1.3), ('m', 's', 'a')))]
-        assert (extract_single(self.fragments[0], self.fragments[1], 3, False) == r01)
+        assert (extract_single(self.fragments[0], self.fragments[1], 3, 20, False) == r01)
         r12 = [(FragmentToken('wavfile1', Interval(0.7,1.0), ('w', 'o', 'r')),
                 FragmentToken('wavfile2', Interval(0.1,0.4), ('w', 'o', 'r')))]
-        assert (extract_single(self.fragments[1], self.fragments[2], 3, False) == r12)
+        assert (extract_single(self.fragments[1], self.fragments[2], 3, 20, False) == r12)
 
     def test_miss(self):
-        assert (extract_single(self.fragments[0], self.fragments[2], 3, False) == [])
+        assert (extract_single(self.fragments[0], self.fragments[2], 3, 20, False) == [])
 
     def test_same(self):
         for f in self.fragments:
