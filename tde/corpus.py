@@ -144,11 +144,12 @@ class Corpus(object):
         return key in self.keys()
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.__dict__)
+        return '<Corpus {0} segments>'.format(
+            len(self.segment_annotations))
+        # return '%s(%r)' % (self.__class__.__name__, self.__dict__)
 
     def __str__(self):
-        return '<Corpus {0} {1} {2} segments>'.format(
-            self.name, str(self.interval), len(self.segment_annotations))
+        return pformat(self.segment_annotations)
 
     def annotation(self, name, interval):
         """Find the annotation covering an interval.
