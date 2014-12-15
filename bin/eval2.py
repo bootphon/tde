@@ -4,6 +4,7 @@ from __future__ import division
 
 import os
 import os.path as path
+import sys
 from itertools import izip
 
 import numpy as np
@@ -342,18 +343,27 @@ fileID starttime endtime
 
     valid_ids = ['sample', 'english']
 
+    if getattr(sys, 'frozen', False):
+        # frozen
+        rdir = path.dirname(sys.executable)
+    else:
+        # unfrozen
+        rdir = path.dirname(path.realpath(__file__))
+    curdir = path.dirname(rdir)
+    resource_dir = path.join(curdir, 'resources', 'resources')
+
     if dataset_id == 'sample':
-        names_cross_file  = 'resources/resources/sample.names.cross'
-        names_within_file = 'resources/resources/sample.names.within'
-        gold_clsfile      = 'resources/resources/sample.classes'
-        phn_corpus_file   = 'resources/resources/sample.phn'
-        wrd_corpus_file   = 'resources/resources/sample.wrd'
+        names_cross_file  = path.join(resource_dir, 'sample.names.cross')
+        names_within_file = path.join(resource_dir, 'sample.names.within')
+        gold_clsfile      = path.join(resource_dir, 'sample.classes')
+        phn_corpus_file   = path.join(resource_dir, 'sample.phn')
+        wrd_corpus_file   = path.join(resource_dir, 'sample.wrd')
     elif dataset_id == 'english':
-        names_cross_file  = 'resources/resources/english.names.cross'
-        names_within_file = 'resources/resources/english.names.within'
-        gold_clsfile      = 'resources/resources/english.classes'
-        phn_corpus_file   = 'resources/resources/english.phn'
-        wrd_corpus_file   = 'resources/resources/english.wrd'
+        names_cross_file  = path.join(resource_dir, 'english.names.cross')
+        names_within_file = path.join(resource_dir, 'english.names.within')
+        gold_clsfile      = path.join(resource_dir, 'english.classes')
+        phn_corpus_file   = path.join(resource_dir, 'english.phn')
+        wrd_corpus_file   = path.join(resource_dir, 'english.wrd')
     else:
         print 'unknown datasetID: {0}. datasetID must be one of [{1}]'.format(
             dataset_id, ','.join(valid_ids))
