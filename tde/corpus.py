@@ -95,8 +95,10 @@ class Corpus(object):
     segment_annotations : list of SegmentAnnotations
 
     """
-    def __init__(self, segment_annotations):
+    def __init__(self, segment_annotations=None):
         self.segment_annotations = {}
+        if segment_annotations is None:
+            segment_annotations = []
         for fa in segment_annotations:
             try:
                 self.segment_annotations[fa.name].insert(fa)
