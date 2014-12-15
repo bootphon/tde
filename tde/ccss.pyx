@@ -20,7 +20,8 @@ cdef int triangle(int n):
 @cython.boundscheck(False)
 def allcommonsubstrings(np.ndarray[ITYPE_t, ndim=1] XA,
                         np.ndarray[ITYPE_t, ndim=1] XB,
-                        int minlength, int same=0):
+                        int minlength, int maxlength,
+                        int same=0):
     cdef int mA, mB, i, j, mT, sA, sB, b, score, start, end, max
     mA = XA.shape[0]
     mB = XB.shape[0]
@@ -39,7 +40,7 @@ def allcommonsubstrings(np.ndarray[ITYPE_t, ndim=1] XA,
                 m[i, j] = m[i-1, j-1] + 1
 
     tmp = np.argsort(m, axis=None)
-    tmp = tmp[np.where(np.ravel(m)[tmp] >= minlength)]
+    tmp = tmp[np.where(np.ravel(m)[tmp] >= minlength-1)]
 
     mT = tmp.shape[0]
     starters = np.empty((mT,), dtype=ITYPE)
@@ -64,6 +65,8 @@ def allcommonsubstrings(np.ndarray[ITYPE_t, ndim=1] XA,
 
         for start in xrange(score-minlength+1):
             for end in xrange(start + minlength, score+1):
+                if end - start > maxlength:
+                    continue
                 r[i, 0] = diag[start, 0]
                 r[i, 1] = diag[start, 1]
                 r[i, 2] = end - start
