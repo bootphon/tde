@@ -4,7 +4,6 @@
 import os
 import numpy
 
-from Cython.Build import cythonize
 from cx_Freeze import setup, Executable
 from distutils.extension import Extension
 
@@ -25,12 +24,12 @@ extensions = [Extension('tde.ccss', sources=['tde/ccss.pyx'],
                         extra_compile_args=['-shared', '-pthread', '-fPIC',
                                             '-fwrapv', '-O3', '-Wall',
                                             '-fno-strict-aliasing'],
-                        includes=['/usr/include/python2.7', np_inc]),
+                        include_dirs=['/usr/include/python2.7', np_inc]),
               Extension('tde.levenshtein', sources=['tde/levenshtein'],
                         extra_compile_args=['-shared', '-pthread', '-fPIC',
                                             '-fwrapv', '-O3', '-Wall',
                                             '-fno-strict-aliasing'],
-                        includes=['/usr/include/python2.7', np_inc])]
+                        include_dirs=['/usr/include/python2.7', np_inc])]
 
 
 build_exe_options = dict(
@@ -51,24 +50,18 @@ setup(
     ],
     package_dir={'tde':
                  'tde'},
-    include_package_data=True,
-    install_requires=requirements,
-    license="MIT",
-    zip_safe=False,
+    license="GPLv3",
     keywords='tde',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: GPLv3 License',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
     ],
-    ext_modules = cythonize("tde/*.pyx", include_dirs=np_inc,
-                            extra_compile_args=['-shared', '-pthread', '-fPIC',
-                                                '-fwrapv', '-O3', '-Wall',
-                                                '-fno-strict-aliasing']),
+    ext_modules=extensions,
     include_dirs=[numpy.get_include(),
                   os.path.join(numpy.get_include(), 'numpy')],
     executables = [Executable('bin/eval2.py')],

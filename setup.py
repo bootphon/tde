@@ -27,7 +27,18 @@ test_requirements = [
 ]
 
 np_lib = os.path.dirname(numpy.__file__)
-np_inc = [os.path.join(np_lib, 'core/include')]
+np_inc = numpy.get_include()
+
+extensions = [Extension('tde.ccss', sources=['tde/ccss.pyx'],
+                        extra_compile_args=['-shared', '-pthread', '-fPIC',
+                                            '-fwrapv', '-O3', '-Wall',
+                                            '-fno-strict-aliasing'],
+                        include_dirs=['/usr/include/python2.7', np_inc]),
+              Extension('tde.levenshtein', sources=['tde/levenshtein.pyx'],
+                        extra_compile_args=['-shared', '-pthread', '-fPIC',
+                                            '-fwrapv', '-O3', '-Wall',
+                                            '-fno-strict-aliasing'],
+                        include_dirs=['/usr/include/python2.7', np_inc])]
 
 setup(
     name='tde',
@@ -44,7 +55,7 @@ setup(
                  'tde'},
     include_package_data=True,
     install_requires=requirements,
-    license="BSD",
+    license="GPLv3",
     zip_safe=False,
     keywords='tde',
     classifiers=[
@@ -57,10 +68,5 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     cmdclass={'build_ext': build_ext},
-    ext_modules=[Extension('ccss', ['tde/ccss.pyx'],
-                           include_dirs=np_inc)],
-    include_dirs=[numpy.get_include(),
-                  os.path.join(numpy.get_include(), 'numpy')],
-    test_suite='tests',
-    tests_require=test_requirements
+    ext_modules=extensions,
 )
