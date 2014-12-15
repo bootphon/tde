@@ -422,7 +422,7 @@ class Interval(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def __len__(self):
+    def length(self):
         return self.end - self.start
 
     def overlap(self, other):
@@ -465,7 +465,7 @@ class Interval(object):
         if np.isclose(over, 0.0):
             return False
         time_overlaps = over > self.minimum_overlap
-        frac_overlaps = over > self.minimum_overlap_fraction * len(other)
+        frac_overlaps = over > self.minimum_overlap_fraction * other.length()
         return time_overlaps or frac_overlaps
 
 
