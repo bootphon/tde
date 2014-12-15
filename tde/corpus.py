@@ -106,6 +106,8 @@ class Corpus(object):
                 sc = SortedList([fa], key=cmp_to_key(annotation_cmp))
                 self.segment_annotations[fa.name] = sc
 
+        self._cache = {}
+
     def keys(self):
         """Return the names in the index.
 
@@ -180,19 +182,22 @@ class Corpus(object):
         t : list of tokens
             FragmentTokens covered by the interval.
         """
-        try:
-            fa_for_filename = self.segment_annotations[name]
-        except KeyError:
-            raise KeyError('no such name: {0}'.format(name))
-        dummy_token = FragmentToken(None, interval, None)
-        try:
-            fa = fa_for_filename.find_le(dummy_token)
-        except ValueError:
-            raise ValueError('interval not found: {0}'.format(str(interval)))
-        if (fa.interval.overlap(interval)) > 0:
-            return fa.tokens_at_interval(interval)
-        else:
-            raise ValueError('interval not found: {0}'.format(str(interval)))
+        key = (name, interval)
+        if not key in self._cache:
+            try:
+                fa_for_filename = self.segment_annotations[name]
+            except KeyError:
+                raise KeyError('no such name: {0}'.format(name))
+            dummy_token = FragmentToken(None, interval, None)
+            try:
+                fa = fa_for_filename.find_le(dummy_token)
+            except ValueError:
+                raise ValueError('interval not found: {0}'.format(str(interval)))
+            if (fa.interval.overlap(interval)) > 0:
+                self._cache[key] = fa.tokens_at_interval(interval)
+            else:
+                raise ValueError('interval not found: {0}'.format(str(interval)))
+        return self._cache[key]
 
 
 class SegmentAnnotation(object):
