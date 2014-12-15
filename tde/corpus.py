@@ -138,7 +138,7 @@ class Corpus(object):
         return self.segment_annotations[key]
 
     def __iter__(self):
-        return iter(self.keys())
+        return _flatten(_flatten(self.segment_annotations.itervalues()))
 
     def __contains__(self, key):
         return key in self.keys()
