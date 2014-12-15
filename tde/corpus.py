@@ -476,6 +476,20 @@ class Interval(object):
         frac_overlaps = over > self.minimum_overlap_fraction * other.length()
         return time_overlaps or frac_overlaps
 
+    def contains(self, other):
+        """Determine whether `self` contains `other`.
+
+        Parameters
+        ----------
+        other : Interval
+
+        Returns
+        -------
+        b : boolean
+            True iff `other` is contained in `self`.
+        """
+        return self.start <= other.start and self.end >= other.end
+
 
 def abuts_left(i1, i2, tol=1e-3):
     """Determine whether i1 is directly to the left of i2.
