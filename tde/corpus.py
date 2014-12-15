@@ -13,6 +13,14 @@ from .sortedlist import SortedList
 from .util import unique
 
 _flatten = chain.from_iterable
+
+def lexicon(word_corpus, phone_corpus):
+    lex = collections.defaultdict(set)
+    for t in word_corpus:
+        lex[t.mark].add(phone_corpus.annotation_exact(t.name, t.interval))
+    return lex
+
+
 class ClassDict(collections.Mapping):
     def __init__(self, clsdict):
         self.clsdict = clsdict
