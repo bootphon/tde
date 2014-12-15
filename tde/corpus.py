@@ -151,6 +151,27 @@ class Corpus(object):
     def __str__(self):
         return pformat(self.segment_annotations)
 
+    def restrict(self, names):
+        """Return a new Corpus, containing only the annotations for the
+        specified names.
+
+        Parameters
+        ----------
+        names : list of strings
+          List of identifiers to restrict the Corpus to. Supplied identifiers
+          must be valid (i.e. must be in self.keys()).
+
+        Returns
+        -------
+        c : Corpus
+          Restricted Corpus
+        """
+        c = Corpus()
+        c.segment_annotations = {n: self.segment_annotations[n]
+                                 for n in names}
+        return c
+
+
     def annotation(self, name, interval):
         """Find the annotation covering an interval.
 
