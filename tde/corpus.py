@@ -292,9 +292,7 @@ class SegmentAnnotation(object):
             stop = self.tokens.index_gt(dummy_token)
         except ValueError:
             stop = len(self.tokens)
-        return [x for x in self.tokens[start:stop]]
-
-
+        return tuple([x for x in self.tokens[start:stop]])
 
 
 def annotation_cmp(a1, a2):
