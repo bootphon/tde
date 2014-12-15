@@ -344,65 +344,18 @@ def annotation_cmp(a1, a2):
     """
     return interval_cmp(a1.interval, a2.interval)
 
-
-class FragmentType(namedtuple('FragmentType', ['tokens', 'mark'])):
-    """Collection of FragmentTokens.
-
-    Parameters
-    ----------
-    tokens : list of FragmentToken
-
-    mark : string, optional
-        Symbol corresponding to all the tokens
-    """
-    def __new__(cls, tokens, mark=None):
-        return super(FragmentType, cls).__new__(cls, tokens, mark)
+FragmentType = collections.namedtuple('FragmentType', ['tokens', 'mark'])
+FragmentToken = collections.namedtuple('FragmentToken', ['name', 'interval', 'mark'])
+FragmentToken.__repr__ = lambda self: '%s(%r, %r, %r)' % (self.__class__.__name__,
+                                                   self.name, self.interval,
+                                                   self.mark)
 
 
-class FragmentToken(namedtuple('FragmentToken', ['name', 'interval', 'mark'])):
-    """Annotation on a single interval.
-
-    Parameters
-    ----------
-    name : string
-        Identifier.
-    interval : Interval
-        Temporal interval covered by the annotation.
-    mark : string, optional
-        Annotated symbol.
-    """
-    def __new__(cls, name, interval, mark=None):
-        return super(FragmentToken, cls).__new__(cls, name, interval, mark)
-
-    def __repr__(self):
-        return '%s(%r, %r, %r)' % (self.__class__.__name__,
-                                 self.name, self.interval, self.mark)
-
-    def __hash__(self):
-        return hash(hash(self.name) ^
-                    hash(self.interval) ^
-                    hash(self.mark))
-
-
-class ClassID(namedtuple('ClassID', ['ID', 'mark'])):
-    """Struct for ClassID and an optional symbol.
-
-    Parameters
-    ----------
-    ID : int
-        Integer identifier.
-    mark : string, optional
-        Symbol.
-    """
-
-    def __new__(cls, ID, mark=None):
-        return super(ClassID, cls).__new__(cls, ID, mark)
-
-    def __repr__(self):
-        return '{0}({1}{2})'.format(
-            self.__class__.__name__,
-            self.ID,
-            '({0})'.format(self.mark) if self.mark else '')
+ClassID = collections.namedtuple('ClassID', ['ID', 'mark'])
+ClassID.__repr__ = lambda self: '{0}({1}{2})'.format(
+    self.__class__.__name__,
+    self.ID,
+    '({0})'.format(self.mark) if self.mark else '')
 
 
 def token_cmp(t1, t2):
