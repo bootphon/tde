@@ -165,7 +165,7 @@ class Corpus(object):
         a : list of strings
             Symbols covered by the interval.
         """
-        return [x.mark for x in self.tokens(name, interval)]
+        return tuple(x.mark for x in self.tokens(name, interval))
 
     def tokens(self, name, interval):
         """Find the FragmentTokens covering an interval.
