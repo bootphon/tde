@@ -168,6 +168,16 @@ class Corpus(object):
         """
         return tuple(x.mark for x in self.tokens(name, interval))
 
+    def annotation_exact(self, name, interval):
+        return tuple(x.mark for x in self.tokens_exact(name, interval))
+
+    def tokens_exact(self, name, interval):
+        tokens = self.tokens(name, interval)
+        if tokens[0].interval.start != interval.start and \
+           tokens[-1].interval.end != interval.end:
+            raise ValueError('exact tokens not found')
+        return tokens
+
     def tokens(self, name, interval):
         """Find the FragmentTokens covering an interval.
 
