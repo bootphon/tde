@@ -2,12 +2,86 @@
 
 """
 
-from collections import namedtuple
+import collections
 from functools import cmp_to_key
+from itertools import chain, combinations
+from pprint import pformat
 
 import numpy as np
 
-from sortedlist import SortedList
+from .sortedlist import SortedList
+from .util import unique
+
+_flatten = chain.from_iterable
+class ClassDict(collections.Mapping):
+    def __init__(self, clsdict):
+        self.clsdict = clsdict
+
+    def __contains__(self, key):
+        return key in self.clsdict
+
+    def __getitem__(self, key):
+        return self.clsdict[key]
+
+    def __iter__(self):
+        return iter(self.clsdict)
+
+    def __len__(self):
+        return len(self.clsdict)
+
+    def __str__(self):
+        return str(self.clsdict)
+
+    def pretty(self):
+        return pformat(self.clsdict)
+
+    def iter_fragments(self):
+        return unique(_flatten(self.clsdict.itervalues()))
+
+    def iter_pairs(self, within, order):
+        vals = self.clsdict.itervalues()
+        if within:
+            if order:
+                pairs = _flatten(((f1, f2), (f2, f1))
+                                 for fragments in vals
+                                 for f1, f2 in combinations(fragments, 2))
+            else:
+                pairs = ((f1, f2)
+                         for fragments in vals
+                         for f1, f2 in combinations(fragments, 2))
+        else: # across classes
+            if order:
+                pairs = (((f1, f2), (f2, f1))
+                         for f1, f2 in combinations(_flatten(vals), 2))
+                pairs = _flatten(pairs)
+            else:
+                pairs = ((f1, f2)
+                         for f1, f2 in combinations(_flatten(vals), 2))
+        return unique(pairs)
+
+    def restrict(self, names, remove_singletons=False):
+        """Return a new ClassDict object restricted to only the identifiers in
+        names.
+
+        Parameters
+        ----------
+        names : list of strings
+          Identifiers to restrict the mapping to.
+        remove_singletons : bool
+          Remove classes with a single element
+
+        Returns
+        -------
+        d : ClassDict object
+          Restricted class map
+        """
+        names = set(names)
+        r = {}
+        for classID, fragments in self.clsdict.iteritems():
+            fs = [f for f in fragments if f.name in names]
+            if len(fs) > 1:
+                r[classID] = fs
+        return ClassDict(r)
 
 
 class Corpus(object):
