@@ -54,6 +54,8 @@ def read_classfile(filename):
                 r[curr_class] = curr
                 curr = []
                 curr_class = None
+    if not curr_class is None:
+        r[curr_class] = curr
     return r
 
 
