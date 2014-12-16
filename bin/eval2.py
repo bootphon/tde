@@ -406,5 +406,5 @@ fileID starttime endtime
                dest, verbose, n_jobs)
     nlp(disc_clsdict, gold_clsdict, names_within, names_cross,
         dest, verbose, n_jobs)
-    boundary(disc_clsdict, phn_corpus, names_within, names_cross, dest,
+    boundary(disc_clsdict, wrd_corpus, names_within, names_cross, dest,
              verbose, n_jobs)
