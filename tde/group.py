@@ -22,7 +22,9 @@ from .util import verb_print, dbg_banner, pretty_pairs, intersection
 
 def make_pclus(disc_clsdict, verbose, debug):
     with verb_print('constructing pclus', verbose, True, True):
-        pclus = list(Pclus_single(disc_clsdict))
+        pclus = list(tuple(sorted((f1, f2),
+                             key=lambda f: (f.name, f.interval.start)))
+                     for f1, f2 in Pclus_single(disc_clsdict))
     if debug:
         print dbg_banner('PCLUS ({0})'.format(len(pclus)))
         print pretty_pairs(pclus)
@@ -33,6 +35,7 @@ def make_pgoldclus(disc_clsdict, verbose, debug):
     with verb_print('constructing pgoldclus', verbose, True, True):
         pgoldclus = Pgoldclus(disc_clsdict)
     if debug:
+        pgoldclus = list(pgoldclus)
         print dbg_banner('PGOLDCLUS ({0})'.format(len(pgoldclus)))
         print pretty_pairs(pgoldclus)
         print
