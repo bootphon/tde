@@ -2,99 +2,39 @@
 
 from __future__ import division
 
-from pprint import pformat
+from .util import verb_print, unique
 
-from .util import verb_print, dbg_banner, pretty_pairs, intersection
-from .sets import Pclus_single, Pgoldlex, typeset, nmatch, weights
+def evaluate_token_type(disc_clsdict, wrd_corpus,
+                        verbose=False, debug=False):
+    n_word_tokens = sum(1 for _ in unique(iter(wrd_corpus)))
+    word_types = set(f.mark for f in wrd_corpus)
+    n_word_types = len(word_types)
+    n_disc_fragments = sum(1 for _ in disc_clsdict.iter_fragments())
 
+    with verb_print('querying words', verbose, True, True, True):
+        types_hit = set()
+        types_seen = set()
+        hits = 0
+        for disc_fragment in disc_clsdict.iter_fragments():
+            disc_start = disc_fragment.interval.start
+            disc_end = disc_fragment.interval.end
+            wrd_tokens = wrd_corpus.tokens(disc_fragment.name,
+                                           disc_fragment.interval)
+            types_seen.add(tuple(f.mark for f in wrd_tokens))
+            if len(wrd_tokens) != 1:
+                continue
+            goldtok = wrd_tokens[0]
+            if abs(goldtok.interval.start - disc_start) > 0.03:
+                continue
+            if abs(goldtok.interval.end - disc_end) > 0.03:
+                continue
+            types_hit.add(goldtok.mark)
+            hits += 1
 
-def make_pclus(disc_clsdict, verbose, debug):
-    with verb_print('constructing pclus', verbose, True, True):
-        pclus = list(Pclus_single(disc_clsdict))
-    if debug:
-        print dbg_banner('PCLUS ({0})'.format(len(pclus)))
-        print pretty_pairs(pclus)
-        print
-    return pclus
+    token_prec = hits / n_disc_fragments
+    token_rec = hits / n_word_tokens
 
+    type_prec = len(types_hit) / len(types_seen)
+    type_rec = len(types_hit) / n_word_types
 
-def make_pgoldlex(disc_clsdict, lexicon, verbose, debug):
-    with verb_print('constructing pgoldclus', verbose, True, True):
-        pgoldclus = list(Pgoldlex(disc_clsdict, lexicon))
-    if debug:
-        print dbg_banner('PGOLDCLUS ({0})'.format(len(pgoldclus)))
-        print pretty_pairs(pgoldclus)
-        print
-    return pgoldclus
-
-
-def make_typeset(pclus_set, verbose, debug):
-    with verb_print('constructing typeset', verbose, True, True):
-        ts = list(typeset(pclus_set))
-    if debug:
-        print dbg_banner('TYPESET ({0})'.format(len(ts)))
-        print pformat(ts)
-        print
-    return ts
-
-
-def make_weights(pclus_set, verbose, debug):
-    with verb_print('constructing weights', verbose, True, True):
-        ws = weights(pclus_set)
-    if debug:
-        print dbg_banner('WEIGHTS')
-        print pformat(ws)
-        print
-    return ws
-
-def make_pdisc_pgoldlex_nmatch(pdisc, pgoldlex, verbose, debug):
-    with verb_print('making pdisc/pgoldlex nmatch', verbose, True, True):
-        pdisc_pgoldlex_intersect = list(intersection(pgoldlex, pdisc))
-        pdisc_pgoldlex_nmatch = nmatch(pdisc_pgoldlex_intersect)
-    if debug:
-        print dbg_banner('NMATCH(PDISC/PGOLDLEX)')
-        print pformat(pdisc_pgoldlex_nmatch)
-        print
-    return pdisc_pgoldlex_nmatch
-
-def make_pdisc_nmatch(pdisc, verbose, debug):
-    with verb_print('making pdisc nmatch', verbose, True, True):
-        pdisc_nmatch = nmatch(pdisc)
-    if debug:
-        print dbg_banner('NMATCH(PDISC)')
-        print pformat(pdisc_nmatch)
-        print
-    return pdisc_nmatch
-
-
-def make_pgoldlex_nmatch(pgoldlex, verbose, debug):
-    with verb_print('making pgoldlex nmatch', verbose, True, True):
-        pgoldlex_nmatch = nmatch(pgoldlex)
-    if debug:
-        print dbg_banner('NMATCH(PGOLDLEX)')
-        print pformat(pgoldlex_nmatch)
-        print
-    return pgoldlex_nmatch
-
-def evaluate_token_type(disc_clsdict, lexicon, verbose=False, debug=False):
-    pdisc = make_pclus(disc_clsdict, verbose, debug)
-    pgoldlex = make_pgoldlex(disc_clsdict, lexicon, verbose, debug)
-
-    ts = make_typeset(pdisc, verbose, debug)
-    one_over_ntypes = 1./len(ts)
-    ws = make_weights(pdisc, verbose, debug)
-
-    pdisc_pgoldlex_nmatch = make_pdisc_pgoldlex_nmatch(pdisc, pgoldlex,
-                                                       verbose, debug)
-    pdisc_nmatch = make_pdisc_nmatch(pdisc, verbose, debug)
-    pgoldlex_nmatch = make_pgoldlex_nmatch(pgoldlex, verbose, debug)
-
-    prec_token = sum(ws[t] * pdisc_pgoldlex_nmatch[t] / pdisc_nmatch[t]
-                     for t in ts if pdisc_nmatch[t] > 0)
-    rec_token = sum(ws[t] * pdisc_pgoldlex_nmatch[t] / pgoldlex_nmatch[t]
-                     for t in ts if pgoldlex_nmatch[t] > 0)
-    prec_type = sum(one_over_ntypes * pdisc_pgoldlex_nmatch[t] / pdisc_nmatch[t]
-                    for t in ts if pdisc_nmatch[t] > 0)
-    rec_type = sum(one_over_ntypes * pdisc_pgoldlex_nmatch[t] / pgoldlex_nmatch[t]
-                   for t in ts if pgoldlex_nmatch[t] > 0)
-    return prec_token, rec_token, prec_type, rec_type
+    return token_prec, token_rec, type_prec, type_rec

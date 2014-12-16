@@ -98,35 +98,35 @@ def group(disc_clsdict, names_within, names_cross, dest, verbose, n_jobs):
                                          len(names_within),
                                          sum(map(len, names_within))))
 
-def _token_type_sub(clsdict, lexicon, names, label, verbose, n_jobs):
+def _token_type_sub(clsdict, wrd_corpus, names, label, verbose, n_jobs):
     et = tde.token_type.evaluate_token_type
     if verbose:
         print '  token/type ({2}): subsampled {0} files in {1} sets'\
             .format(sum(map(len, names)), len(names), label)
     with tde.util.verb_print('  token/type ({0}): calculating scores'
                              .format(label), verbose, False, True, False):
-        pto, rto, pty, rty = izip(*Parallel(n_jobs=n_jobs,
-                                           verbose=5 if verbose else 0)
-                                 (delayed(et)(clsdict.restrict(ns, False),
-                                              lexicon)
-                                  for ns in names))
+        pto, rto, pty, rty = izip(*(et(clsdict.restrict(ns, False),
+                                       wrd_corpus)
+                                    for ns in names))
     pto = np.fromiter(pto, dtype=np.double)
     rto = np.fromiter(rto, dtype=np.double)
     pty = np.fromiter(pty, dtype=np.double)
     rty = np.fromiter(rty, dtype=np.double)
     return pto, rto, pty, rty
 
-def token_type(disc_clsdict, lexicon, names_within, names_cross,
+def token_type(disc_clsdict, wrd_corpus, names_within, names_cross,
                dest, verbose, n_jobs):
     if verbose:
         print tde.util.dbg_banner('TOKEN/TYPE')
-    ptoc, rtoc, ptyc, rtyc = _token_type_sub(disc_clsdict, lexicon, names_cross,
-                                             'cross', verbose, n_jobs)
+    ptoc, rtoc, ptyc, rtyc = _token_type_sub(disc_clsdict, wrd_corpus,
+                                             names_cross, 'cross',
+                                             verbose, n_jobs)
     ftoc = np.vectorize(tde.util.fscore)(ptoc, rtoc)
     ftyc = np.vectorize(tde.util.fscore)(ptyc, rtyc)
 
-    ptow, rtow, ptyw, rtyw = _token_type_sub(disc_clsdict, lexicon, names_within,
-                                             'within', verbose, n_jobs)
+    ptow, rtow, ptyw, rtyw = _token_type_sub(disc_clsdict, wrd_corpus,
+                                             names_within, 'within',
+                                             verbose, n_jobs)
     ftow = np.vectorize(tde.util.fscore)(ptow, rtow)
     ftyw = np.vectorize(tde.util.fscore)(ptyw, rtyw)
     with open(path.join(dest, 'token_type'), 'w') as fid:
@@ -402,7 +402,7 @@ fileID starttime endtime
     match(disc_clsdict, gold_clsdict, phn_corpus, names_within, names_cross,
           dest, verbose, n_jobs)
     group(disc_clsdict, names_within, names_cross, dest, verbose, n_jobs)
-    token_type(disc_clsdict, lexicon, names_within, names_cross,
+    token_type(disc_clsdict, wrd_corpus, names_within, names_cross,
                dest, verbose, n_jobs)
     nlp(disc_clsdict, gold_clsdict, names_within, names_cross,
         dest, verbose, n_jobs)
