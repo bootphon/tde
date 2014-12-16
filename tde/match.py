@@ -73,16 +73,14 @@ def make_psubs_pgold_nmatch(pgold, psubs, verbose, debug):
     return psubs_pgold_nmatch
 
 
-def make_psubs_pdisc_nmatch(pdisc, psubs, verbose, debug):
-    with verb_print('making psubs/pgold nmatch', verbose, True, True):
-        psubs_pdisc_intersect = intersection(pdisc, psubs)
-
-        psubs_pdisc_nmatch = nmatch(psubs_pdisc_intersect)
+def make_psubs_nmatch(psubs, verbose, debug):
+    with verb_print('making psubs nmatch', verbose, True, True):
+        psubs_nmatch = nmatch(psubs)
     if debug:
-        print dbg_banner('NMATCH(PSUBS/PDISC)')
-        print pformat(psubs_pdisc_nmatch)
+        print dbg_banner('NMATCH(PSUBS)')
+        print pformat(psubs_nmatch)
         print
-    return psubs_pdisc_nmatch
+    return psubs_nmatch
 
 
 def make_pgold_nmatch(pgold, verbose, debug):
@@ -100,12 +98,11 @@ def eval_from_psets(pdisc, pgold, psubs, verbose=False, debug=False):
     ws = make_weights(psubs, verbose, debug)
     psubs_pgold_nmatch = make_psubs_pgold_nmatch(pgold, psubs,
                                                  verbose, debug)
-    psubs_pdisc_nmatch = make_psubs_pdisc_nmatch(pdisc, psubs,
-                                                 verbose, debug)
+    psubs_nmatch = make_psubs_nmatch(psubs, verbose, debug)
     pgold_nmatch = make_pgold_nmatch(pgold, verbose, debug)
 
-    prec = sum(ws[t] * psubs_pgold_nmatch[t] / psubs_pdisc_nmatch[t]
-               for t in ts if psubs_pdisc_nmatch[t] > 0)
+    prec = sum(ws[t] * psubs_pgold_nmatch[t] / psubs_nmatch[t]
+               for t in ts if psubs_nmatch[t] > 0)
     rec = sum(ws[t] * psubs_pgold_nmatch[t] / pgold_nmatch[t]
               for t in ts if pgold_nmatch[t] > 0)
     return prec, rec
