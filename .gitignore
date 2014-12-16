@@ -1,5 +1,5 @@
 *.py[cod]
-
+tests/mockdata/
 *.ipynb
 
 # C extensions
@@ -44,3 +44,12 @@ output/*/index.html
 docs/_build
 /tde/ccss.c
 /tde/ccss.html
+/tde/levenshtein.c
+/bin/resources_bak/
+/cxsetup.py
+/command
+/hooks.py
+/match.log
+/notebooks/
+/tests/buck/
+/tde/match_group_functions.txt
