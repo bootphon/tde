@@ -68,6 +68,8 @@ def pretty_pairs(pclus_set):
     strings = [('({0} {1} {2})'.format(f1.name, f1.interval, f1.mark),
                 '({0} {1} {2})'.format(f2.name, f2.interval, f2.mark))
                for f1, f2 in pclus_set]
+    if len(strings) == 0:
+        return ''
     longest = max(len(x[0]) for x in strings)
     return '\n'.join('{1:{0}s} - {2:{0}s}'.format(longest, s1, s2)
                      for s1, s2 in strings)
@@ -127,7 +129,6 @@ def fname2speaker(corpus_type):
     else:
         raise NotImplementedError('no implementation of fname2speaker for {0}'
                                   .format(corpus_type))
-
 
 def fscore(p, r):
     if p == 0 and r == 0:
