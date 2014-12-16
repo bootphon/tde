@@ -284,17 +284,17 @@ if __name__ == '__main__':
     import argparse
     def parse_args():
         parser = argparse.ArgumentParser(
-            prog='eval.py',
+            prog='eval2',
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description='Evaluate spoken term discovery',
             epilog="""Example usage:
 
-$ python eval.py sample my_sample.classes resultsdir/
+$ ./eval2 sample my_sample.classes resultsdir/
 
 evaluates STD output `my_sample.classes` on the sample dataset and stores the
 output in `resultsdir/`.
 
-$ python eval.py english my_english.classes resultsdir/
+$ ./eval2 english my_english.classes resultsdir/
 
 evaluates STD performance on the english dataset.
 
@@ -346,11 +346,12 @@ fileID starttime endtime
     if getattr(sys, 'frozen', False):
         # frozen
         rdir = path.dirname(sys.executable)
+        resource_dir = path.join(rdir, 'resources', 'resources')
     else:
         # unfrozen
         rdir = path.dirname(path.realpath(__file__))
-    curdir = path.dirname(rdir)
-    resource_dir = path.join(curdir, 'resources', 'resources')
+        resource_dir = path.join(rdir, 'resources')
+
 
     if dataset_id == 'sample':
         names_cross_file  = path.join(resource_dir, 'sample.names.cross')
