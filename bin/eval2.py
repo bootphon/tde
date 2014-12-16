@@ -389,8 +389,6 @@ fileID starttime endtime
     disc_clsdict = load_disc(disc_clsfile, phn_corpus, verbose)
     gold_clsdict = load_gold(gold_clsfile, phn_corpus, verbose)
 
-    lexicon = tde.corpus.lexicon(wrd_corpus, phn_corpus)
-
     try:
         os.makedirs(dest)
     except OSError:
