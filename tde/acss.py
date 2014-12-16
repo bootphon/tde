@@ -18,42 +18,11 @@ def pairwise_substring_completion(fragment1, fragment2, corpus,
                               substrings(tokenseq2, minlength, maxlength)):
         submark1, intervalseq1 = zip(*seq1)
         submark2, intervalseq2 = zip(*seq2)
-        interval1 = Interval(intervalseq1[0].start, intervalseq1[-1].end)
-        interval2 = Interval(intervalseq2[0].start, intervalseq2[-1].end)
-        yield (FragmentToken(name1, interval1, submark1),
-               FragmentToken(name2, interval2, submark2))
-
-# def pairwise_substring_completion(pair, corpus, minlength, maxlength):
-#     """Generate the substring completions of a pair.
-
-#     Parameters
-#     ----------
-#     pair : ((ClassID, FragmentToken), (ClassID, FragmentToken)) tuple
-#     corpus : Corpus
-
-#     Returns
-#     -------
-#     i : iterator over pairs of ((ClassID, FragmentToken), (ClassID, FragmentToken))
-
-#     """
-#     (classID1, token1), (classID2, token2) = pair
-#     name1 = token1.name
-#     name2 = token2.name
-
-#     tokenseq1 = [(x.mark, x.interval)
-#                  for x in corpus.tokens(name1, token1.interval)]
-#     tokenseq2 = [(x.mark, x.interval)
-#                  for x in corpus.tokens(name2, token2.interval)]
-
-#     for seq1, seq2 in product(substrings(tokenseq1, minlength, maxlength),
-#                               substrings(tokenseq2, minlength, maxlength)):
-#         submark1, intervalseq1 = zip(*seq1)
-#         submark2, intervalseq2 = zip(*seq2)
-#         interval1 = Interval(intervalseq1[0].start, intervalseq1[-1].end)
-#         interval2 = Interval(intervalseq2[0].start, intervalseq2[-1].end)
-
-#         yield ((classID1, FragmentToken(name1, interval1, submark1)),
-#                (classID2, FragmentToken(name2, interval2, submark2)))
+        if submark1 == submark2:
+            interval1 = Interval(intervalseq1[0].start, intervalseq1[-1].end)
+            interval2 = Interval(intervalseq2[0].start, intervalseq2[-1].end)
+            yield (FragmentToken(name1, interval1, submark1),
+                   FragmentToken(name2, interval2, submark2))
 
 
 def substrings(s, minlength, maxlength):
