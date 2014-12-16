@@ -3,11 +3,12 @@
 """
 from __future__ import division
 
-from collections import Counter
+from collections import Counter, defaultdict
 from itertools import chain
 
 from .util import unique
 from .acss import pairwise_substring_completion
+from .corpus import ClassDict
 
 _flatten = chain.from_iterable
 
@@ -63,21 +64,15 @@ def Pgoldclus(clsdict):
     iter : iterator (FragmentToken, FragmentToken) pairs
 
     """
-    return ((f1, f2)
-            for f1, f2 in clsdict.iter_pairs(within=False, order=False)
-            if f1.mark == f2.mark and
-            not (f1.name == f2.name and
-                 f1.interval.overlap(f2.interval) > 0))
-
-
-def Pgoldlex(clsdict, lexicon):
-    words = set(r for v in lexicon.itervalues() for r in v)
-
-    return ((f1, f2)
-            for f1, f2 in clsdict.iter_pairs(within=False, order=False)
-            if f1.mark == f2.mark
-            and not (f1.name == f2.name and f1.interval.overlap(f2.interval) > 0)
-            and f1.mark in words)
+    d = defaultdict(set)
+    for f in clsdict.iter_fragments():
+        d[f.mark].add(f)
+    cd = ClassDict(dict(d))
+    return (tuple(sorted((f1, f2),
+                             key=lambda f: (f.name, f.interval.start)))
+            for f1, f2 in cd.iter_pairs(within=True, order=False)
+            if not (f1.name == f2.name
+                    and f1.interval.overlap(f2.interval) > 0))
 
 
 def Pclus_single(clsdict):
