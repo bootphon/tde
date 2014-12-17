@@ -55,7 +55,7 @@ def random_fragment(intervals, exclude):
     start = np.around(random.uniform(interval.start, interval.end), 3)
     end = np.around(random.uniform(start, interval.end), 3)
     interval = tde.corpus.Interval(start, end)
-    return tde.corpus.FragmentToken(name, interval)
+    return tde.corpus.FragmentToken(name, interval, None)
 
 def fragments_to_classes(fragments):
     classes = defaultdict(set)
