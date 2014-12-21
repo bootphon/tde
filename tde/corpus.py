@@ -4,7 +4,7 @@
 
 import collections
 from functools import cmp_to_key
-from itertools import chain, combinations
+from itertools import chain, combinations, izip, repeat
 from pprint import pformat
 
 import numpy as np
@@ -40,11 +40,21 @@ class ClassDict(collections.Mapping):
     def __str__(self):
         return str(self.clsdict)
 
+    def __eq__(self, other):
+        return self.clsdict == other.clsdict
+
+    def __neq__(self, other):
+        return self.clsdict != other.clsdict
+
     def pretty(self):
         return pformat(self.clsdict)
 
-    def iter_fragments(self):
-        return unique(_flatten(self.clsdict.itervalues()))
+    def iter_fragments(self, with_class=False):
+        if with_class:
+            return unique(_flatten(izip(repeat(c), v)
+                                   for c, v in self.clsdict.iteritems()))
+        else:
+            return unique(_flatten(self.clsdict.itervalues()))
 
     def iter_pairs(self, within, order):
         vals = self.clsdict.itervalues()
@@ -66,6 +76,7 @@ class ClassDict(collections.Mapping):
                 pairs = ((f1, f2)
                          for f1, f2 in combinations(_flatten(vals), 2))
         return unique(pairs)
+
 
     def restrict(self, names, remove_singletons=False):
         """Return a new ClassDict object restricted to only the identifiers in
