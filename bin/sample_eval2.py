@@ -18,8 +18,64 @@ import tde.match
 import tde.nlp
 import tde.group
 import tde.boundaries
+import tde.split_utils
 
 VERSION = "0.1.0"
+
+
+def _load_classes(fname, corpus):
+    return tde.reader.load_classes_txt(fname, corpus)
+
+
+def load_disc(fname, corpus, split_file, truncate, verbose):
+    with tde.util.verb_print('  loading discovered classes',
+                             verbose, True, True, True):
+        disc = _load_classes(fname, corpus)
+    split_mapping = tde.split_utils.load_split(split_file)
+    if truncate:
+        with tde.util.verb_print('checking discovered classes and truncating'):
+            disc, interval_errors, filename_errors, bad_intervals = \
+                tde.split_utils.truncate_intervals(disc_clsdict, corpus,
+                                                   split_mapping, verbose)
+    else:
+        with tde.util.verb_print('checking discovered classes', verbose, True,
+                                 True, True):
+            interval_errors, filename_errors, bad_intervals = \
+                tde.split_utils.check_intervals(disc_clsdict,
+                                                split_mapping,)
+    if verbose or not truncate:
+        interval_error = len(interval_errors) > 0
+        filename_error = len(filename_errors) > 0
+        bad_interval_error = len(bad_intervals) > 0
+        errors_found = filename_error or interval_error or bad_interval_error
+        if interval_error:
+            print tde.util.dbg_banner('intervals found in {0} outside of valid'
+                                      ' splits'.format(fname))
+            for fragment, fstart, fend in interval_errors:
+                print '  found: {0} [{1:.3f}, {2:.3f}], closest: {0} [{3:.3f}'\
+                    '{4:.3f}]'.format(fragment.name,
+                                      fragment.interval.start,
+                                      fragment.interval.end,
+                                      fstart, fend)
+        if filename_error:
+            print tde.util.dbg_banner('unknown filenames found in {0}'
+                                      .format(fname))
+            for fname in filename_errors:
+                print '  found: {0}'.format(fname)
+        if bad_interval_error:
+            print tde.util.dbg_banner('bad intervals found in {0}')
+            for fragment in bad_intervals:
+                print '  found: {0} [{1:.3f}, {2:.3f}]'.format(
+                    fragment.name,
+                    fragment.interval.start, fragment.interval.end)
+        if errors_found:
+            print 'There were errors in {0}'.format(fname)
+
+        if not truncate and errors_found:
+            exit()
+
+    return disc
+
 
 def _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names, label,
                verbose, n_jobs):
@@ -265,15 +321,6 @@ def load_names_within(fname, verbose):
         names = _load_names(fname)
     return names
 
-def _load_classes(fname, corpus):
-    return tde.reader.load_classes_txt(fname, corpus)
-
-def load_disc(fname, corpus, verbose):
-    with tde.util.verb_print('  loading discovered classes',
-                             verbose, True, True, True):
-        disc = _load_classes(fname, corpus)
-    return disc
-
 def load_gold(fname, corpus, verbose):
     with tde.util.verb_print('  loading gold classes',
                              verbose, True, True, True):
@@ -322,6 +369,12 @@ fileID starttime endtime
                             dest='n_jobs',
                             default=1,
                             help='number of cores to use')
+        parser.add_argument('-f', '--force-truncate',
+                            action='store_true',
+                            dest='truncate',
+                            default=False,
+                            help='force truncation of discovered fragments '
+                            'outside of splits')
         parser.add_argument('-V', '--version', action='version',
                             version="%(prog)s version {version}".format(version=VERSION))
         return vars(parser.parse_args())
@@ -348,6 +401,7 @@ fileID starttime endtime
     gold_clsfile      = path.join(resource_dir, 'sample.classes')
     phn_corpus_file   = path.join(resource_dir, 'sample.phn')
     wrd_corpus_file   = path.join(resource_dir, 'sample.wrd')
+    split_file        = path.join(resource_dir, 'sample.split')
 
     if verbose:
         print 'sample_eval2 version {0}'.format(VERSION)
@@ -366,7 +420,9 @@ fileID starttime endtime
     names_cross = load_names_cross(names_cross_file, verbose)
     names_within = load_names_within(names_within_file, verbose)
 
-    disc_clsdict = load_disc(disc_clsfile, phn_corpus, verbose)
+    truncate = args['truncate']
+    disc_clsdict = load_disc(disc_clsfile, phn_corpus, split_file,
+                             truncate, verbose)
     gold_clsdict = load_gold(gold_clsfile, phn_corpus, verbose)
 
     try:
