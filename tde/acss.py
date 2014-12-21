@@ -3,7 +3,7 @@
 """
 
 import numpy as np
-from itertools import product, combinations
+from itertools import combinations
 from .ccss import allcommonsubstrings as _acss
 from .corpus import Interval, FragmentToken
 
@@ -14,15 +14,30 @@ def pairwise_substring_completion(fragment1, fragment2, corpus,
                  for f in corpus.tokens(name1, fragment1.interval)]
     tokenseq2 = [(f.mark, f.interval)
                  for f in corpus.tokens(name2, fragment2.interval)]
-    for seq1, seq2 in product(substrings(tokenseq1, minlength, maxlength),
-                              substrings(tokenseq2, minlength, maxlength)):
+
+    for seq1, seq2 in psubstrings(tokenseq1, tokenseq2, minlength, maxlength):
         submark1, intervalseq1 = zip(*seq1)
         submark2, intervalseq2 = zip(*seq2)
-        if submark1 == submark2:
-            interval1 = Interval(intervalseq1[0].start, intervalseq1[-1].end)
-            interval2 = Interval(intervalseq2[0].start, intervalseq2[-1].end)
-            yield (FragmentToken(name1, interval1, submark1),
-                   FragmentToken(name2, interval2, submark2))
+        interval1 = Interval(intervalseq1[0].start, intervalseq1[-1].end)
+        interval2 = Interval(intervalseq2[0].start, intervalseq2[-1].end)
+        yield (FragmentToken(name1, interval1, submark1),
+               FragmentToken(name2, interval2, submark2))
+
+
+def psubstrings(s1, s2, minlength, maxlength):
+    if len(s1) > len(s2):
+        for a, b in psubstrings(s2, s1, minlength, maxlength):
+            yield b, a
+    else:
+        if len(s1) == len(s2):
+            for ss_len in xrange(minlength, min(len(s1) + 1, maxlength)):
+                for start in xrange(0, len(s1) - ss_len + 1):
+                    yield s1[start:start+ss_len], s2[start:start+ss_len]
+        else:
+            for offset in xrange(len(s2) - len(s1) + 1):
+                for ss in psubstrings(s1, s2[offset:offset+len(s1)],
+                                      minlength, maxlength):
+                    yield ss
 
 
 def substrings(s, minlength, maxlength):
