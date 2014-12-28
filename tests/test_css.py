@@ -1,8 +1,13 @@
 import pytest
 from pytest import list_of
-from tde.acss import allcommonsubstrings, substrings, psubstrings, \
+from tde.substrings.acss import allcommonsubstrings, substrings, psubstrings, \
     pairwise_substring_completion
-from tde.corpus import SegmentAnnotation, FragmentToken, Interval, Corpus
+
+from tde.data.corpus import Corpus
+from tde.data.fragment import FragmentToken
+from tde.data.interval import Interval
+from tde.data.segment_annotation import SegmentAnnotation
+
 
 class TestPairwiseSubstringCompletion(object):
     fragments = [FragmentToken('a', Interval(0.0, 0.25), 'a'),

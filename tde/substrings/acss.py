@@ -2,10 +2,13 @@
 
 """
 
-import numpy as np
 from itertools import combinations
-from .ccss import allcommonsubstrings as _acss
-from .corpus import Interval, FragmentToken
+
+import numpy as np
+
+from tde.substrings.ccss import allcommonsubstrings as _acss
+from tde.data.interval import Interval
+from tde.data.fragment import FragmentToken
 
 def pairwise_substring_completion(fragment1, fragment2, corpus,
                                   minlength, maxlength):
