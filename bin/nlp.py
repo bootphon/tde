@@ -7,119 +7,79 @@ from collections import defaultdict
 import numpy as np
 from joblib import Parallel, delayed
 
-import tde.nlp
-import tde.util
-import tde.reader
+from tde.measures.nlp import NED, coverage
+from tde.util.printing import verb_print, banner, pretty_score_nlp
+from tde.util.reader import load_classes_txt, load_corpus_txt, load_split
+
 
 def calculate_ned_score(disc_clsdict, names, verbose, debug, n_jobs):
-    ned = tde.nlp.NED
-    with tde.util.verb_print('calculating NED score',
-                             verbose, False, True, False):
+    ned = NED
+    with verb_print('calculating NED score',
+                    verbose, False, True, False):
         s = Parallel(n_jobs=n_jobs)(delayed(ned)(disc_clsdict.restrict(ns, True))
                                     for ns in names)
     return np.array(s)
-    #     scores = np.fromiter((tde.nlp.NED(disc_clsdict.restrict(ns, True))
-    #                           for ns in names),
-    #                          dtype=np.double)
-    # return scores
+
 
 def calculate_coverage_score(disc_clsdict, gold_clsdict, names,
                              verbose, debug, n_jobs):
-    cov = tde.nlp.coverage
-    with tde.util.verb_print('calculating coverage score',
-                             verbose, False, True, False):
+    cov = coverage
+    with verb_print('calculating coverage score',
+                    verbose, False, True, False):
         s = Parallel(n_jobs=n_jobs)(delayed(cov)(disc_clsdict.restrict(ns, False),
                                                  gold_clsdict.restrict(ns, False))
                                     for ns in names)
     return np.array(s)
-        # scores = np.fromiter((tde.nlp.coverage(disc_clsdict.restrict(ns, False),
-        #                                        gold_clsdict.restrict(ns, False))
-        #                       for ns in names),
-        #                      dtype=np.double)
 
 
-def check_names(names_cross_file, names_within_file, do_exact):
-    if names_cross_file is None and names_within_file is None and not do_exact:
-        print 'no names files supplied for subsampling. use option ' \
-            '--force-exact to force an exact evaluation.'
-        exit()
-    if do_exact:
-        print 'calculating exact matching measures. this is slow, memory-inten'\
-        'sive and generally not recommended.'
-
-
-def load_names_file(names_file):
-    names = [[]]
-    for line in open(names_file):
-        if line == '\n':
-            names.append([])
-        else:
-            names[-1].append(line.strip())
-    return names
-
-def get_names_cross(names_file, corpus, verbose, debug):
-    if names_file is None:
-        if verbose:
-            print 'no names file supplied for cross, using corpus'
-        names = [corpus.keys()]
-    else:
-        if verbose:
-            print 'loading names file "{0}"'.format(names_file)
-        names = load_names_file(names_file)
+def get_fragments_cross(fragments_file, verbose, debug):
+    if verbose:
+        print 'loading cross file "{0}"'.format(fragments_file)
+    fragments = load_split(fragments_file, multiple=True)
     if debug:
-        print tde.util.dbg_banner('names cross ({0})'.format(len(names)))
-        print pformat(names)
+        print banner('fragments cross ({0})'.format(len(fragments)))
+        print str(fragments)
         print
-    return names
+    return fragments
 
 
-def get_names_within(names_file, corpus, verbose, debug, fname2speaker=None):
-    if fname2speaker is None:
-        fname2speaker = lambda x: x
-    if names_file is None:
-        # construct from corpus
-        if verbose:
-            print 'no names file supplied for within, using corpus'
-        names_per_speaker = defaultdict(list)
-        for name in corpus.keys():
-            names_per_speaker[fname2speaker(name)].append(name)
-        names = names_per_speaker.values()
-    else:
-        if verbose:
-            print 'loading names file "{0}"'.format(names_file)
-        names = load_names_file(names_file)
+def get_fragments_within(fragments_file, verbose, debug):
+    if verbose:
+        print 'loading within file "{0}"'.format(fragments_file)
+    fragments = load_split(fragments_file, multiple=True)
     if debug:
-        print tde.util.dbg_banner('names within ({0})'.format(len(names)))
-        print pformat(names)
+        print banner('fragments within ({0})'.format(len(fragments)))
+        print str(fragments)
         print
-    return names
+    return fragments
+
 
 def load_disc_clsdict(fname, corpus, verbose, debug):
-    with tde.util.verb_print('loading discovered class file', verbose, True, True):
-        clsdict = tde.reader.load_classes_txt(fname, corpus)
+    with verb_print('loading discovered class file', verbose, True, True):
+        clsdict = load_classes_txt(fname, corpus)
 
     if debug:
-        print tde.util.dbg_banner('DISC CLSDICT')
+        print banner('DISC CLSDICT')
         print pformat(clsdict)
         print
     return clsdict
 
 def load_gold_clsdict(fname, corpus, verbose, debug):
-    with tde.util.verb_print('loading gold class file', verbose, True, True):
-        gold_clsdict = tde.reader.load_classes_txt(gold_clsfile, corpus)
+    with verb_print('loading gold class file', verbose, True, True):
+        gold_clsdict = load_classes_txt(gold_clsfile, corpus)
 
     if debug:
-        print tde.util.dbg_banner('GOLD CLSDICT')
+        print banner('GOLD CLSDICT')
         print pformat(gold_clsdict)
         print
     return gold_clsdict
 
 def load_corpus(fname, verbose, debug):
-    with tde.util.verb_print('loading corpus file', verbose, True, True):
-        corpus = tde.reader.load_corpus_txt(fname)
+    with verb_print('loading corpus file', verbose, True, True):
+        corpus = load_corpus_txt(fname)
 
     if debug:
-        print tde.util.dbg_banner('CORPUS')
+        print banner('CORPUS')
         print repr(corpus)
         print
     return corpus
@@ -176,11 +136,6 @@ fileID starttime endtime phone
                             default=None,
                             help='file containing the names to be used for '
                             'within-speaker validation')
-        parser.add_argument('--force-exact',
-                            action='store_true',
-                            dest='exact',
-                            default=False,
-                            help='force an exact evaluation, not recommended')
         parser.add_argument('-v', '--verbose',
                             action='store_true',
                             dest='verbose',
@@ -212,30 +167,25 @@ fileID starttime endtime phone
     disc_clsdict = load_disc_clsdict(disc_clsfile, corpus, verbose, debug)
     gold_clsdict = load_gold_clsdict(disc_clsfile, corpus, verbose, debug)
 
-    names_cross_file = args['cross']
-    names_within_file = args['within']
-    do_exact = args['exact']
-    check_names(names_cross_file, names_within_file, do_exact)
-    if do_exact:
-        names_cross_file = None
-        names_within_file = None
+    fragments_cross_file = args['cross']
+    fragments_within_file = args['within']
 
-    names_cross = get_names_cross(names_cross_file, corpus, verbose, debug)
-    names_within = get_names_within(names_within_file, corpus, verbose, debug)
+    fragments_cross = get_fragments_cross(fragments_cross_file, verbose, debug)
+    fragments_within = get_fragments_within(fragments_within_file, verbose, debug)
 
-    ned_score_cross = calculate_ned_score(disc_clsdict, names_cross,
+    ned_score_cross = calculate_ned_score(disc_clsdict, fragments_cross,
                                           verbose, debug, n_jobs)
-    ned_score_within = calculate_ned_score(disc_clsdict, names_within,
+    ned_score_within = calculate_ned_score(disc_clsdict, fragments_within,
                                            verbose, debug, n_jobs)
     coverage_score_cross = calculate_coverage_score(disc_clsdict, gold_clsdict,
-                                                    names_cross,
+                                                    fragments_cross,
                                                     verbose, debug, n_jobs)
     coverage_score_within = calculate_coverage_score(disc_clsdict, gold_clsdict,
-                                                     names_within,
+                                                     fragments_within,
                                                      verbose, debug, n_jobs)
-    print tde.nlp.pretty_score(ned_score_within, coverage_score_within,
-                               'NLP within speaker', len(names_within),
-                               sum([len(ns) for ns in names_within]))
-    print tde.nlp.pretty_score(ned_score_cross, coverage_score_cross,
-                               'NLP cross speaker', len(names_cross),
-                               sum([len(ns) for ns in names_cross]))
+    print pretty_score_nlp(ned_score_within, coverage_score_within,
+                           'NLP within speaker', len(fragments_within),
+                           sum([len(ns) for ns in fragments_within]))
+    print pretty_score_nlp(ned_score_cross, coverage_score_cross,
+                           'NLP cross speaker', len(fragments_cross),
+                           sum([len(ns) for ns in fragments_cross]))

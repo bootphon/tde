@@ -5,38 +5,38 @@
 from __future__ import division
 
 from pprint import pformat
-from collections import defaultdict
 
 import numpy as np
 from joblib import Parallel, delayed
 
-import tde.reader
-import tde.util
-import tde.group
+from tde.util.printing import verb_print, banner, pretty_score_f
+from tde.util.functions import fscore
+from tde.util.reader import load_corpus_txt, load_classes_txt, load_split
+from tde.measures.group import evaluate_group
 
 def load_corpus(fname, verbose, debug):
-    with tde.util.verb_print('loading corpus file', verbose, True, True):
-        corpus = tde.reader.load_corpus_txt(fname)
+    with verb_print('loading corpus file', verbose, True, True):
+        corpus = load_corpus_txt(fname)
 
     if debug:
-        print tde.util.dbg_banner('CORPUS')
+        print banner('CORPUS')
         print repr(corpus)
         print
     return corpus
 
 def load_disc_clsdict(fname, corpus, verbose, debug):
-    with tde.util.verb_print('loading discovered class file', verbose, True, True):
-        clsdict = tde.reader.load_classes_txt(fname, corpus)
+    with verb_print('loading discovered class file', verbose, True, True):
+        clsdict = load_classes_txt(fname, corpus)
 
     if debug:
-        print tde.util.dbg_banner('DISC CLSDICT')
+        print banner('DISC CLSDICT')
         print clsdict.pretty()
         print
     return clsdict
 
-def check_names(names_cross_file, names_within_file, do_exact):
-    if names_cross_file is None and names_within_file is None and not do_exact:
-        print 'no names files supplied for subsampling. use option ' \
+def check_names(fragments_cross_file, fragments_within_file, do_exact):
+    if fragments_cross_file is None and fragments_within_file is None and not do_exact:
+        print 'no fragments files supplied for subsampling. use option ' \
             '--force-exact to force an exact evaluation.'
         exit()
     if do_exact:
@@ -53,47 +53,32 @@ def load_names_file(names_file):
             names[-1].append(line.strip())
     return names
 
-def get_names_cross(names_file, corpus, verbose, debug):
-    if names_file is None:
-        if verbose:
-            print 'no names file supplied for cross, using corpus'
-        names = corpus.keys()
-    else:
-        if verbose:
-            print 'loading names file "{0}"'.format(names_file)
-        names = load_names_file(names_file)
+def get_fragments_cross(fragments_file, verbose, debug):
+    if verbose:
+        print 'loading cross file "{0}"'.format(fragments_file)
+    fragments = load_split(fragments_file, multiple=True)
     if debug:
-        print tde.util.dbg_banner('names cross ({0})'.format(len(names)))
-        print pformat(names)
+        print banner('fragments cross ({0})'.format(len(fragments)))
+        print str(fragments)
         print
-    return names
+    return fragments
 
-
-def get_names_within(names_file, corpus, verbose, debug):
-    if names_file is None:
-        # construct from corpus
-        if verbose:
-            print 'no names file supplied for within, using corpus'
-        names_per_speaker = defaultdict(list)
-        for name in corpus.keys():
-            names_per_speaker[name[:3]].append(name)
-        names = names_per_speaker.values()
-    else:
-        if verbose:
-            print 'loading names file "{0}"'.format(names_file)
-        names = load_names_file(names_file)
+def get_fragments_within(fragments_file, verbose, debug):
+    if verbose:
+        print 'loading within file "{0}"'.format(fragments_file)
+    fragments = load_split(fragments_file, multiple=True)
     if debug:
-        print tde.util.dbg_banner('names within ({0})'.format(len(names)))
-        print pformat(names)
+        print banner('fragments within ({0})'.format(len(fragments)))
+        print str(fragments)
         print
-    return names
+    return fragments
 
 def calculate_scores(disc_clsdict, names, verbose, debug, n_jobs):
-    eg = tde.group.evaluate_group
+    eg = evaluate_group
     if verbose:
         print 'subsampled {0} files in {1} sets'.format(sum(map(len, names)),
                                                         len(names))
-    with tde.util.verb_print('calculating scores', verbose, False, True, False):
+    with verb_print('calculating scores', verbose, False, True, False):
         tp, tr = zip(*Parallel(n_jobs=n_jobs,
                                verbose=5 if verbose else 0,
                                pre_dispatch='n_jobs')
@@ -105,9 +90,9 @@ def calculate_scores(disc_clsdict, names, verbose, debug, n_jobs):
     tp = np.array(tp)
     tr = np.array(tr)
     if debug:
-        print tde.util.dbg_banner('calculate_scores tp')
+        print banner('calculate_scores tp')
         print pformat(tp)
-        print tde.util.dbg_banner('calculate_scores tr')
+        print banner('calculate_scores tr')
         print pformat(tr)
         print
     return tp, tr
@@ -161,11 +146,6 @@ fileID starttime endtime phone
                             default=None,
                             help='file containing the names to be used for '
                             'within-speaker validation')
-        parser.add_argument('--force-exact',
-                            action='store_true',
-                            dest='exact',
-                            default=False,
-                            help='force an exact evaluation, not recommended')
         parser.add_argument('-v', '--verbose',
                             action='store_true',
                             dest='verbose',
@@ -191,30 +171,25 @@ fileID starttime endtime phone
     disc_clsfile = args['disc_clsfile'][0]
     corpus_file = args['corpusfile'][0]
 
-    names_cross_file = args['cross']
-    names_within_file = args['within']
-    do_exact = args['exact']
-    check_names(names_cross_file, names_within_file, do_exact)
-    if do_exact:
-        names_cross_file = None
-        names_within_file = None
+    fragments_cross_file = args['cross']
+    fragments_within_file = args['within']
 
     corpus = load_corpus(corpus_file, verbose, debug)
     disc_clsdict = load_disc_clsdict(disc_clsfile, corpus, verbose, debug)
 
-    names_cross = get_names_cross(names_cross_file, corpus, verbose, debug)
-    names_within = get_names_within(names_within_file, corpus, verbose, debug)
+    fragments_cross = get_fragments_cross(fragments_cross_file, verbose, debug)
+    fragments_within = get_fragments_within(fragments_within_file, verbose, debug)
 
-    pc, rc = calculate_scores(disc_clsdict, names_cross,
+    pc, rc = calculate_scores(disc_clsdict, fragments_cross,
                               verbose=verbose, debug=debug, n_jobs=n_jobs)
 
-    pw, rw = calculate_scores(disc_clsdict, names_within,
+    pw, rw = calculate_scores(disc_clsdict, fragments_within,
                               verbose=verbose, debug=debug, n_jobs=n_jobs)
 
-    fw = np.vectorize(tde.util.fscore)(pw, rw)
-    fc = np.vectorize(tde.util.fscore)(pc, rc)
+    fw = np.vectorize(fscore)(pw, rw)
+    fc = np.vectorize(fscore)(pc, rc)
 
-    print tde.util.pretty_scores(pw, rw, fw, 'group within-speaker',
-                                 pw.shape[0], sum(map(len, names_within)))
-    print tde.util.pretty_scores(pc, rc, fc, 'group cross-speaker',
-                                 pc.shape[0], sum(map(len, names_cross)))
+    print pretty_score_f(pw, rw, fw, 'group within-speaker',
+                         pw.shape[0], sum(map(len, fragments_within)))
+    print pretty_score_f(pc, rc, fc, 'group cross-speaker',
+                         pc.shape[0], sum(map(len, fragments_cross)))
