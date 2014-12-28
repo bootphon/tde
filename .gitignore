@@ -53,3 +53,12 @@ docs/_build
 /notebooks/
 /tests/buck/
 /tde/match_group_functions.txt
+/bin/resources_old/
+/bin/resources/ENGLISH_SPLIT
+/bin/resources/SAMPLE_SPLIT
+/bin/eval2
+/sanity.py
+/bin/resources/english.names.cross.bak
+/bin/resources/english.names.within.bak
+/bin/resources/sample.names.cross.bak
+/bin/resources/sample.names.within.bak
