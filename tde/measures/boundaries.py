@@ -1,11 +1,10 @@
 from __future__ import division
 
-from itertools import chain
 from collections import defaultdict
 
 import numpy as np
 
-_flatten = chain.from_iterable
+from tde.util.functions import flatten
 
 class Boundaries(object):
     def __init__(self, container):
@@ -19,7 +18,7 @@ class Boundaries(object):
             bounds[fragment.name].append(fragment.interval)
         self.bounds = {}
         for name, intervals in bounds.iteritems():
-            points = set(_flatten((interval.start, interval.end)
+            points = set(flatten((interval.start, interval.end)
                                   for interval in intervals))
             self.bounds[name] = np.sort(np.array(list(points)))
 
@@ -29,10 +28,10 @@ class Boundaries(object):
         else:
             points = self.bounds[name]
             ix = np.searchsorted(points, query_point, side='left')
-            if ix == 0 or ix == points.shape[0] - 1:
-                found_point = points[ix]
+            if ix == 0:
+                found_point = points[0]
             elif ix == points.shape[0]:
-                found_point = points[ix-1]
+                found_point = points[-1]
             elif query_point - points[ix-1] < points[ix] - query_point:
                 found_point = points[ix-1]
             else:

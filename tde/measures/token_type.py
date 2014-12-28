@@ -2,14 +2,15 @@
 
 from __future__ import division
 
-from .util import verb_print, unique
+from tde.util.printing import verb_print
+from tde.util.functions import unique, iterator_length
 
 def evaluate_token_type(disc_clsdict, wrd_corpus,
                         verbose=False, debug=False):
-    n_word_tokens = sum(1 for _ in unique(iter(wrd_corpus)))
-    word_types = set(f.mark for f in wrd_corpus)
+    n_word_tokens = iterator_length(unique(wrd_corpus.iter_fragments()))
+    word_types = set(f.mark for f in wrd_corpus.iter_fragments())
     n_word_types = len(word_types)
-    n_disc_fragments = sum(1 for _ in disc_clsdict.iter_fragments())
+    n_disc_fragments = iterator_length(disc_clsdict.iter_fragments())
 
     with verb_print('querying words', verbose, True, True, True):
         types_hit = set()
