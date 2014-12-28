@@ -1,21 +1,55 @@
 """Functions for reading corpus and class files.
 """
 import re
+from collections import defaultdict
 
-from .corpus import FragmentToken, Corpus, SegmentAnnotation, Interval, \
-    ClassID, abuts_left, ClassDict
+
+from tde.data.corpus import Corpus
+from tde.data.fragment import FragmentToken
+from tde.data.segment_annotation import SegmentAnnotation
+from tde.data.interval import Interval, IntervalDB
+from tde.data.classes import ClassID, ClassDict
 
 
 class ReadError(Exception):
     pass
 
 
-def read_classfile(filename):
+def read_split_single(s):
+    mapping = defaultdict(list)
+    for line in s.split('\n'):
+        if line == '':
+            continue
+        name, start, end = line.strip().split(' ')
+        mapping[name].append((float(start), float(end)))
+    return IntervalDB({k: sorted(v) for k, v in mapping.iteritems()})
+
+
+def read_split_multiple(s):
+    return [read_split_single(s0) for s0 in s.split('\n\n')]
+
+
+def load_split(fname, multiple=False):
+    with open(fname) as fid:
+        s = fid.read()
+    if multiple:
+        r = read_split_multiple(s)
+    else:
+        r = read_split_single(s)
+    return r
+
+def load_classfile(fname):
+    with open(fname, 'r') as fid:
+        contents = fid.read()
+    return read_classfile(contents)
+
+
+def read_classfile(contents):
     """Read in class file.
 
     Parameters
     ----------
-    filename : string
+    contents : string
 
     Returns
     -------
@@ -27,7 +61,7 @@ def read_classfile(filename):
     curr = []  # list of FragmentTokens without mark
     curr_class = None
 
-    for lineno, line in enumerate(open(filename, 'r')):
+    for lineno, line in enumerate(contents.split('\n')):
         m = re.match(classp, line)
         if m:  # on a line with a class label
             if curr_class is None:
@@ -45,42 +79,30 @@ def read_classfile(filename):
                 curr.append(FragmentToken(name, interval, None))
             else:  # whitespace line, reset
                 if curr_class is None:
-                    if lineno == 0:
-                        continue
-                    print lineno, line
-                    raise ValueError('attempting to end reading class '
-                                     'while not reading class in line {0}'
-                                     .format(lineno))
-                r[curr_class] = curr
+                    continue
+                    # if lineno == 0:
+                    #     continue
+                    # print lineno, line
+                    # raise ValueError('attempting to end reading class '
+                    #                  'while not reading class in line {0}'
+                    #                  .format(lineno))
+                r[curr_class] = tuple(curr)
                 curr = []
                 curr_class = None
     if not curr_class is None:
-        r[curr_class] = curr
+        r[curr_class] = tuple(curr)
     return r
 
 
-def read_annotation_file(filename):
-    """Read in a file with annotations in the Buckeye style.
+def read_annotation(contents):
 
-    The phone file must be formatted with the following, space-separated
-    columns:
-
-    identifier start stop symbol
-
-    Parameters
-    ----------
-    filename : string
-
-    Returns
-    -------
-    r : list of list of FragmentToken
-
-    """
     ID_prev = None
     interval_prev = None
     r = []
     tokenlist_curr = []
-    for line_idx, line in enumerate(open(filename)):
+    for line_idx, line in enumerate(contents.split('\n')):
+        if line == '':
+            continue
         try:
             ID_curr, start, stop, mark = line.strip().split(' ')
         except ValueError:
@@ -104,7 +126,7 @@ def read_annotation_file(filename):
             tokenlist_curr = [token]
             ID_prev = ID_curr
         elif ID_prev == ID_curr:
-            if abuts_left(interval_prev, interval_curr):
+            if interval_prev.is_left_adjacent_to(interval_curr):
                 tokenlist_curr.append(token)
             else:
                 r.append(tokenlist_curr)
@@ -116,6 +138,28 @@ def read_annotation_file(filename):
         interval_prev = interval_curr
     r.append(tokenlist_curr)
     return r
+
+
+def load_annotation(filename):
+    """Read in a file with annotations in the Buckeye style.
+
+    The phone file must be formatted with the following, space-separated
+    columns:
+
+    identifier start stop symbol
+
+    Parameters
+    ----------
+    filename : string
+
+    Returns
+    -------
+    r : list of list of FragmentToken
+
+    """
+    with open(filename, 'r') as fid:
+        contents = fid.read()
+    return read_annotation(contents)
 
 
 def load_corpus_txt(filename):
@@ -134,7 +178,7 @@ def load_corpus_txt(filename):
     c : Corpus
 
     """
-    return tokenlists_to_corpus(read_annotation_file(filename))
+    return tokenlists_to_corpus(load_annotation(filename))
 
 
 def tokenlists_to_corpus(tokenlists):
@@ -181,7 +225,7 @@ def load_classes_txt(filename, corpus):
         Annotated classes.
 
     """
-    raw = read_classfile(filename)  # without annotation
+    raw = load_classfile(filename)  # without annotation
     # add mark annotation
     return ClassDict(annotate_classes(raw, corpus))
 
