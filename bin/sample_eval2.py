@@ -10,91 +10,97 @@ from itertools import izip
 import numpy as np
 from joblib import Parallel, delayed
 
-import tde.reader
-import tde.util
-import tde.token_type
-import tde.corpus
-import tde.match
-import tde.nlp
-import tde.group
-import tde.boundaries
-import tde.split_utils
-
 VERSION = "0.1.0"
+
+from tde.util.reader import load_classes_txt, load_corpus_txt, load_split
+from tde.util.printing import verb_print, banner, pretty_score_f, \
+    pretty_score_nlp
+from tde.util.splits import truncate_intervals, check_intervals
+from tde.util.functions import fscore
+
+from tde.measures.nlp import NED, coverage
+from tde.measures.group import evaluate_group
+from tde.measures.boundaries import Boundaries, eval_from_bounds
+from tde.measures.match import eval_from_psets, make_pdisc, make_pgold, \
+    make_psubs
+from tde.measures.token_type import evaluate_token_type
 
 
 def _load_classes(fname, corpus):
-    return tde.reader.load_classes_txt(fname, corpus)
+    return load_classes_txt(fname, corpus)
 
 
 def load_disc(fname, corpus, split_file, truncate, verbose):
-    with tde.util.verb_print('  loading discovered classes',
+    with verb_print('  loading discovered classes',
                              verbose, True, True, True):
         disc = _load_classes(fname, corpus)
-    split_mapping = tde.split_utils.load_split(split_file)
+    split_mapping = load_split(split_file)
     if truncate:
-        with tde.util.verb_print('checking discovered classes and truncating'):
-            disc, interval_errors, filename_errors, bad_intervals = \
-                tde.split_utils.truncate_intervals(disc_clsdict, corpus,
-                                                   split_mapping, verbose)
+        with verb_print('  checking discovered classes and truncating'):
+            disc, filename_errors, interval_errors = \
+                truncate_intervals(disc_clsdict, corpus,
+                                   split_mapping, verbose)
     else:
-        with tde.util.verb_print('checking discovered classes', verbose, True,
+        with verb_print('  checking discovered classes', verbose, True,
                                  True, True):
-            interval_errors, filename_errors, bad_intervals = \
-                tde.split_utils.check_intervals(disc_clsdict,
-                                                split_mapping,)
+            filename_errors, interval_errors = \
+                check_intervals(disc, split_mapping,)
     if verbose or not truncate:
+        filename_errors = sorted(filename_errors,
+                                 key=lambda x: (x.name, x.interval.start))
+        interval_errors = sorted(interval_errors,
+                                 key=lambda x: (x.name, x.interval.start))
         interval_error = len(interval_errors) > 0
         filename_error = len(filename_errors) > 0
-        bad_interval_error = len(bad_intervals) > 0
-        errors_found = filename_error or interval_error or bad_interval_error
+        errors_found = filename_error or interval_error
         if interval_error:
-            print tde.util.dbg_banner('intervals found in {0} outside of valid'
+            print banner('intervals found in {0} outside of valid'
                                       ' splits'.format(fname))
-            for fragment, fstart, fend in interval_errors:
-                print '  found: {0} [{1:.3f}, {2:.3f}], closest: {0} [{3:.3f}'\
-                    '{4:.3f}]'.format(fragment.name,
-                                      fragment.interval.start,
-                                      fragment.interval.end,
-                                      fstart, fend)
-        if filename_error:
-            print tde.util.dbg_banner('unknown filenames found in {0}'
-                                      .format(fname))
-            for fname in filename_errors:
-                print '  found: {0}'.format(fname)
-        if bad_interval_error:
-            print tde.util.dbg_banner('bad intervals found in {0}')
-            for fragment in bad_intervals:
+            if len(interval_errors) > 100:
+                print 'There were more than 100 interval errors found.'
+                print 'Printing only the first 100.'
+                print
+                interval_errors = interval_errors[:100]
+            for fragment in interval_errors:
                 print '  found: {0} [{1:.3f}, {2:.3f}]'.format(
                     fragment.name,
                     fragment.interval.start, fragment.interval.end)
+        if filename_error:
+            print banner('unknown filenames found in {0}'
+                                      .format(fname))
+            if len(filename_errors) > 100:
+                print 'There were more than 100 filename errors found.'
+                print 'Printing only the first 100.'
+                print
+                filename_errors = filename_errors[:100]
+            for fragment in filename_errors:
+                print '  found: {0}'.format(fragment.name)
         if errors_found:
             print 'There were errors in {0}'.format(fname)
 
         if not truncate and errors_found:
-            exit()
-
+            sys.exit()
     return disc
 
 
 def _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names, label,
                verbose, n_jobs):
-    em = tde.match.eval_from_psets
+    em = eval_from_psets
     if verbose:
         print '  matching ({2}): subsampled {0} files in {1} sets'\
             .format(sum(map(len, names)), len(names), label)
-    with tde.util.verb_print('  matching ({0}): prepping psets'.format(label),
+    with verb_print('  matching ({0}): prepping psets'.format(label),
                              verbose, True, True, True):
-        pdiscs = [tde.match.make_pdisc(disc_clsdict.restrict(ns, True),
-                                       False, False)
-                  for ns in names_cross]
-        pgolds = [tde.match.make_pgold(gold_clsdict.restrict(ns, True),
-                                       False, False)
-                  for ns in names_cross]
-        psubs = [tde.match.make_psubs(disc_clsdict.restrict(ns, True),
-                                      phn_corpus, 3, 20, False, False)
-                 for ns in names_cross]
-    with tde.util.verb_print('  matching ({0}): calculating scores'
+        pdiscs = [make_pdisc(disc_clsdict.restrict(fs, True),
+                             False, False)
+                  for fs in fragments_cross]
+        pgolds = [make_pgold(gold_clsdict.restrict(fs, True),
+                             False, False)
+                  for fs in fragments_cross]
+        psubs = [make_psubs(disc_clsdict.restrict(fs, True),
+                            phn_corpus, 3, 20, False, False)
+                 for fs in fragments_cross]
+    with verb_print('  matching ({0}): calculating scores'
                              .format(label), verbose, False, True, False):
         tp, tr = izip(*Parallel(n_jobs=n_jobs,
                                 verbose=5 if verbose else 0,
@@ -103,32 +109,34 @@ def _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names, label,
                       for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
     return np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
 
-def match(disc_clsdict, gold_clsdict, phn_corpus, names_within, names_cross,
+
+def match(disc_clsdict, gold_clsdict, phn_corpus,
+          fragments_within, fragments_cross,
           dest, verbose, n_jobs):
     if verbose:
-        print tde.util.dbg_banner('MATCHING')
-    pc, rc = _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names_cross,
-                        'cross', verbose, n_jobs)
-    fc = np.vectorize(tde.util.fscore)(pc, rc)
+        print banner('MATCHING')
+    pc, rc = _match_sub(disc_clsdict, gold_clsdict, phn_corpus,
+                        fragments_cross, 'cross', verbose, n_jobs)
+    fc = np.vectorize(fscore)(pc, rc)
 
-    pw, rw = _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names_within,
-                        'within', verbose, n_jobs)
-    fw = np.vectorize(tde.util.fscore)(pw, rw)
+    pw, rw = _match_sub(disc_clsdict, gold_clsdict, phn_corpus,
+                        fragments_within, 'within', verbose, n_jobs)
+    fw = np.vectorize(fscore)(pw, rw)
     with open(path.join(dest, 'matching'), 'w') as fid:
-        fid.write(tde.util.pretty_scores(pc, rc, fc, 'match cross-speaker',
-                                         len(names_cross),
-                                         sum(map(len, names_cross))))
+        fid.write(pretty_score_f(pc, rc, fc, 'match cross-speaker',
+                                         len(fragments_cross),
+                                         sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(tde.util.pretty_scores(pw, rw, fw, 'match within-speaker',
-                                         len(names_within),
-                                         sum(map(len, names_within))))
+        fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker',
+                                         len(fragments_within),
+                                         sum(map(len, fragments_within))))
 
 def _group_sub(disc_clsdict, names, label, verbose, n_jobs):
-    eg = tde.group.evaluate_group
+    eg = evaluate_group
     if verbose:
         print '  group ({2}): subsampled {0} files in {1} sets'\
             .format(sum(map(len, names)), len(names), label)
-    with tde.util.verb_print('  group ({0}): calculating scores'.format(label),
+    with verb_print('  group ({0}): calculating scores'.format(label),
                              verbose, False, True, False):
         p, r = izip(*(Parallel(n_jobs=n_jobs,
                               verbose=5 if verbose else 0,
@@ -137,79 +145,77 @@ def _group_sub(disc_clsdict, names, label, verbose, n_jobs):
                       for ns in names)))
     return np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
 
-def group(disc_clsdict, names_within, names_cross, dest, verbose, n_jobs):
+def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs):
     if verbose:
-        print tde.util.dbg_banner('GROUP')
-    pc, rc = _group_sub(disc_clsdict, names_cross, 'cross', verbose, n_jobs)
-    fc = np.vectorize(tde.util.fscore)(pc, rc)
+        print banner('GROUP')
+    pc, rc = _group_sub(disc_clsdict, fragments_cross, 'cross', verbose, n_jobs)
+    fc = np.vectorize(fscore)(pc, rc)
 
-    pw, rw = _group_sub(disc_clsdict, names_within, 'within', verbose, n_jobs)
-    fw = np.vectorize(tde.util.fscore)(pw, rw)
+    pw, rw = _group_sub(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
+    fw = np.vectorize(fscore)(pw, rw)
     with open(path.join(dest, 'group'), 'w') as fid:
-        fid.write(tde.util.pretty_scores(pc, rc, fc, 'group cross-speaker',
-                                         len(names_cross),
-                                         sum(map(len, names_cross))))
+        fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
+                                         len(fragments_cross),
+                                         sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(tde.util.pretty_scores(pw, rw, fw, 'group within-speaker',
-                                         len(names_within),
-                                         sum(map(len, names_within))))
+        fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker',
+                                         len(fragments_within),
+                                         sum(map(len, fragments_within))))
 
 def _token_type_sub(clsdict, wrd_corpus, names, label, verbose, n_jobs):
-    et = tde.token_type.evaluate_token_type
+    et = evaluate_token_type
     if verbose:
         print '  token/type ({2}): subsampled {0} files in {1} sets'\
             .format(sum(map(len, names)), len(names), label)
-    with tde.util.verb_print('  token/type ({0}): calculating scores'
+    with verb_print('  token/type ({0}): calculating scores'
                              .format(label), verbose, False, True, False):
         pto, rto, pty, rty = izip(*(et(clsdict.restrict(ns, False),
-                                       wrd_corpus)
+                                       wrd_corpus.restrict(ns))
                                     for ns in names))
-    pto = np.fromiter(pto, dtype=np.double)
-    rto = np.fromiter(rto, dtype=np.double)
-    pty = np.fromiter(pty, dtype=np.double)
-    rty = np.fromiter(rty, dtype=np.double)
+    pto, rto, pty, rty = np.array(pto), np.array(rto), np.array(pty), np.array(rty)
+
     return pto, rto, pty, rty
 
-def token_type(disc_clsdict, wrd_corpus, names_within, names_cross,
+def token_type(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
                dest, verbose, n_jobs):
     if verbose:
-        print tde.util.dbg_banner('TOKEN/TYPE')
+        print banner('TOKEN/TYPE')
     ptoc, rtoc, ptyc, rtyc = _token_type_sub(disc_clsdict, wrd_corpus,
-                                             names_cross, 'cross',
+                                             fragments_cross, 'cross',
                                              verbose, n_jobs)
-    ftoc = np.vectorize(tde.util.fscore)(ptoc, rtoc)
-    ftyc = np.vectorize(tde.util.fscore)(ptyc, rtyc)
+    ftoc = np.vectorize(fscore)(ptoc, rtoc)
+    ftyc = np.vectorize(fscore)(ptyc, rtyc)
 
     ptow, rtow, ptyw, rtyw = _token_type_sub(disc_clsdict, wrd_corpus,
-                                             names_within, 'within',
+                                             fragments_within, 'within',
                                              verbose, n_jobs)
-    ftow = np.vectorize(tde.util.fscore)(ptow, rtow)
-    ftyw = np.vectorize(tde.util.fscore)(ptyw, rtyw)
+    ftow = np.vectorize(fscore)(ptow, rtow)
+    ftyw = np.vectorize(fscore)(ptyw, rtyw)
     with open(path.join(dest, 'token_type'), 'w') as fid:
-        fid.write(tde.util.pretty_scores(ptoc, rtoc, ftoc, 'token cross-speaker',
-                                         len(names_cross),
-                                         sum(map(len, names_cross))))
+        fid.write(pretty_score_f(ptoc, rtoc, ftoc, 'token cross-speaker',
+                                 len(fragments_cross),
+                                 sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(tde.util.pretty_scores(ptyc, rtyc, ftyc, 'type cross-speaker',
-                                         len(names_cross),
-                                         sum(map(len, names_cross))))
+        fid.write(pretty_score_f(ptyc, rtyc, ftyc, 'type cross-speaker',
+                                 len(fragments_cross),
+                                 sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(tde.util.pretty_scores(ptow, rtow, ftow, 'token within-speaker',
-                                         len(names_within),
-                                         sum(map(len, names_within))))
+        fid.write(pretty_score_f(ptow, rtow, ftow, 'token within-speaker',
+                                 len(fragments_within),
+                                 sum(map(len, fragments_within))))
         fid.write('\n')
-        fid.write(tde.util.pretty_scores(ptyw, rtyw, ftyw, 'type within-speaker',
-                                         len(names_within),
-                                         sum(map(len, names_within))))
+        fid.write(pretty_score_f(ptyw, rtyw, ftyw, 'type within-speaker',
+                                 len(fragments_within),
+                                 sum(map(len, fragments_within))))
 
 def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
     # ned
-    ned = tde.nlp.NED
-    cov = tde.nlp.coverage
+    ned = NED
+    cov = coverage
     if verbose:
-        print '  token/type ({2}): subsampled {0} files in {1} sets'\
+        print '  nlp ({2}): subsampled {0} files in {1} sets'\
             .format(sum(map(len, names)), len(names), label)
-    with tde.util.verb_print('  nlp ({0}): calculating scores'
+    with verb_print('  nlp ({0}): calculating scores'
                              .format(label), verbose, False, True, False):
         ned_score = Parallel(n_jobs=n_jobs,
                              verbose=5 if verbose else 0,
@@ -228,36 +234,36 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
     return np.array(ned_score), np.array(cov_score)
 
 
-def nlp(disc_clsdict, gold_clsdict, names_within, names_cross,
+def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
         dest, verbose, n_jobs):
     if verbose:
-        print tde.util.dbg_banner('NLP')
-    nc, cc = _nlp_sub(disc_clsdict, gold_clsdict, names_cross, 'cross',
+        print banner('NLP')
+    nc, cc = _nlp_sub(disc_clsdict, gold_clsdict, fragments_cross, 'cross',
                       verbose, n_jobs)
-    nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, names_within, 'within',
+    nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, fragments_within, 'within',
                       verbose, n_jobs)
     with open(path.join(dest, 'nlp'), 'w') as fid:
-        fid.write(tde.nlp.pretty_score(nc, cc, 'NLP within-speaker',
-                                       len(names_within),
-                                       sum(map(len, names_within))))
+        fid.write(pretty_score_nlp(nc, cc, 'NLP within-speaker',
+                                       len(fragments_within),
+                                       sum(map(len, fragments_within))))
         fid.write('\n')
-        fid.write(tde.nlp.pretty_score(nw, cw, 'NLP cross-speaker',
-                                       len(names_cross),
-                                       sum(map(len, names_cross))))
+        fid.write(pretty_score_nlp(nw, cw, 'NLP cross-speaker',
+                                       len(fragments_cross),
+                                       sum(map(len, fragments_cross))))
 
 
 def _boundary_sub(disc_clsdict, corpus, names, label, verbose, n_jobs):
-    eb = tde.boundaries.eval_from_bounds
+    eb = eval_from_bounds
     if verbose:
         print '  boundary ({2}): subsampled {0} files in {1} sets'\
             .format(sum(map(len, names)), len(names), label)
-    with tde.util.verb_print('  boundary ({0}): calculating scores'
+    with verb_print('  boundary ({0}): calculating scores'
                              .format(label), verbose, True, True, True):
-        disc_bounds = [tde.boundaries.Boundaries(disc_clsdict.restrict(ns))
+        disc_bounds = [Boundaries(disc_clsdict.restrict(ns))
                        for ns in names]
-        gold_bounds = [tde.boundaries.Boundaries(corpus.restrict(ns))
+        gold_bounds = [Boundaries(corpus.restrict(ns))
                        for ns in names]
-    with tde.util.verb_print('  boundary ({0}): calculating scores'
+    with verb_print('  boundary ({0}): calculating scores'
                              .format(label), verbose, False, True, False):
         p, r = izip(*Parallel(n_jobs=n_jobs, verbose=5 if verbose else 0,
                               pre_dispatch='2*n_jobs') \
@@ -266,63 +272,54 @@ def _boundary_sub(disc_clsdict, corpus, names, label, verbose, n_jobs):
     return np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
 
 
-def boundary(disc_clsdict, corpus, names_within, names_cross,
+def boundary(disc_clsdict, corpus, fragments_within, fragments_cross,
                dest, verbose, n_jobs):
     if verbose:
-        print tde.util.dbg_banner('BOUNDARY')
-    pc, rc = _boundary_sub(disc_clsdict, corpus, names_cross,
+        print banner('BOUNDARY')
+    pc, rc = _boundary_sub(disc_clsdict, corpus, fragments_cross,
                            'cross', verbose, n_jobs)
-    fc = np.vectorize(tde.util.fscore)(pc, rc)
-    pw, rw = _boundary_sub(disc_clsdict, corpus, names_within,
+    fc = np.vectorize(fscore)(pc, rc)
+    pw, rw = _boundary_sub(disc_clsdict, corpus, fragments_within,
                            'within', verbose, n_jobs)
-    fw = np.vectorize(tde.util.fscore)(pw, rw)
+    fw = np.vectorize(fscore)(pw, rw)
     with open(path.join(dest, 'boundary'), 'w') as fid:
-        fid.write(tde.util.pretty_scores(pc, rc, fc, 'boundary cross-speaker',
-                                         len(names_cross),
-                                         sum(map(len, names_cross))))
+        fid.write(pretty_score_f(pc, rc, fc, 'boundary cross-speaker',
+                                         len(fragments_cross),
+                                         sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(tde.util.pretty_scores(pw, rw, fw, 'boundary within-speaker',
-                                         len(names_within),
-                                         sum(map(len, names_within))))
+        fid.write(pretty_score_f(pw, rw, fw, 'boundary within-speaker',
+                                         len(fragments_within),
+                                         sum(map(len, fragments_within))))
 
 def _load_corpus(fname):
-    return tde.reader.load_corpus_txt(fname)
+    return load_corpus_txt(fname)
 
 def load_wrd_corpus(wrd_corpus_file, verbose):
-    with tde.util.verb_print('  loading word corpus file',
+    with verb_print('  loading word corpus file',
                              verbose, True, True, True):
         wrd_corpus = _load_corpus(wrd_corpus_file)
     return wrd_corpus
 
 def load_phn_corpus(phn_corpus_file, verbose):
-    with tde.util.verb_print('  loading phone corpus file',
+    with verb_print('  loading phone corpus file',
                              verbose, True, True, True):
         phn_corpus = _load_corpus(phn_corpus_file)
     return phn_corpus
 
-def _load_names(fname):
-    names = [[]]
-    for line in open(fname):
-        if line == '\n':
-            names.append([])
-        else:
-            names[-1].append(line.strip())
-    return names
-
-def load_names_cross(fname, verbose):
-    with tde.util.verb_print('  loading folds cross',
+def load_fragments_cross(fname, verbose):
+    with verb_print('  loading folds cross',
                              verbose, True, True, True):
-        names = _load_names(fname)
-    return names
+        fragments = load_split(fname, multiple=True)
+    return fragments
 
-def load_names_within(fname, verbose):
-    with tde.util.verb_print('  loading folds within',
+def load_fragments_within(fname, verbose):
+    with verb_print('  loading folds within',
                              verbose, True, True, True):
-        names = _load_names(fname)
-    return names
+        fragments = load_split(fname, multiple=True)
+    return fragments
 
 def load_gold(fname, corpus, verbose):
-    with tde.util.verb_print('  loading gold classes',
+    with verb_print('  loading gold classes',
                              verbose, True, True, True):
         gold = _load_classes(fname, corpus)
     return gold
@@ -358,6 +355,20 @@ fileID starttime endtime
         parser.add_argument('outdir', metavar='DESTINATION',
                             nargs=1,
                             help='location for the evaluation results')
+        parser.add_argument('-f', '--force-truncate',
+                            action='store_true',
+                            dest='truncate',
+                            default=False,
+                            help='force truncation of discovered fragments '
+                            'outside of splits')
+        parser.add_argument('-m', '--measures',
+                            action='store',
+                            nargs='*',
+                            dest='measures',
+                            default=[],
+                            choices=['boundary', 'group', 'match', 'nlp',
+                                     'token/type'],
+                            help='select individual measures to perform')
         parser.add_argument('-v', '--verbose',
                             action='store_true',
                             dest='verbose',
@@ -369,12 +380,6 @@ fileID starttime endtime
                             dest='n_jobs',
                             default=1,
                             help='number of cores to use')
-        parser.add_argument('-f', '--force-truncate',
-                            action='store_true',
-                            dest='truncate',
-                            default=False,
-                            help='force truncation of discovered fragments '
-                            'outside of splits')
         parser.add_argument('-V', '--version', action='version',
                             version="%(prog)s version {version}".format(version=VERSION))
         return vars(parser.parse_args())
@@ -395,13 +400,12 @@ fileID starttime endtime
         rdir = path.dirname(path.realpath(__file__))
         resource_dir = path.join(rdir, 'resources')
 
-
-    names_cross_file  = path.join(resource_dir, 'sample.names.cross')
-    names_within_file = path.join(resource_dir, 'sample.names.within')
-    gold_clsfile      = path.join(resource_dir, 'sample.classes')
-    phn_corpus_file   = path.join(resource_dir, 'sample.phn')
-    wrd_corpus_file   = path.join(resource_dir, 'sample.wrd')
-    split_file        = path.join(resource_dir, 'sample.split')
+    fragments_cross_file  = path.join(resource_dir, 'sample.intervals.cross')
+    fragments_within_file = path.join(resource_dir, 'sample.intervals.within')
+    gold_clsfile          = path.join(resource_dir, 'sample.classes')
+    phn_corpus_file       = path.join(resource_dir, 'sample.phn')
+    wrd_corpus_file       = path.join(resource_dir, 'sample.wrd')
+    split_file            = path.join(resource_dir, 'sample.split')
 
     if verbose:
         print 'sample_eval2 version {0}'.format(VERSION)
@@ -412,13 +416,13 @@ fileID starttime endtime
         print
 
     if verbose:
-        print tde.util.dbg_banner('LOADING FILES')
+        print banner('LOADING FILES')
 
     wrd_corpus = load_wrd_corpus(wrd_corpus_file, verbose)
     phn_corpus = load_phn_corpus(phn_corpus_file, verbose)
 
-    names_cross = load_names_cross(names_cross_file, verbose)
-    names_within = load_names_within(names_within_file, verbose)
+    fragments_cross = load_fragments_cross(fragments_cross_file, verbose)
+    fragments_within = load_fragments_within(fragments_within_file, verbose)
 
     truncate = args['truncate']
     disc_clsdict = load_disc(disc_clsfile, phn_corpus, split_file,
@@ -433,12 +437,22 @@ fileID starttime endtime
     with open(path.join(dest, 'VERSION_{0}'.format(VERSION)), 'w') as fid:
         fid.write('')
 
-    match(disc_clsdict, gold_clsdict, phn_corpus, names_within, names_cross,
-          dest, verbose, n_jobs)
-    group(disc_clsdict, names_within, names_cross, dest, verbose, n_jobs)
-    token_type(disc_clsdict, wrd_corpus, names_within, names_cross,
-               dest, verbose, n_jobs)
-    nlp(disc_clsdict, gold_clsdict, names_within, names_cross,
-        dest, verbose, n_jobs)
-    boundary(disc_clsdict, wrd_corpus, names_within, names_cross, dest,
-             verbose, n_jobs)
+    measures = set(args['measures'])
+    do_all = len(measures) == 0
+    if do_all or 'match' in measures:
+        match(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
+              fragments_cross, dest, verbose, n_jobs)
+    if do_all or 'group' in measures:
+        group(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
+              n_jobs)
+    if do_all or 'token/type' in measures:
+        token_type(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
+                   dest, verbose, n_jobs)
+    if do_all or 'nlp' in measures:
+        nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
+            dest, verbose, n_jobs)
+    if do_all or 'boundary' in measures:
+        boundary(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
+                 dest, verbose, n_jobs)
+    if verbose:
+        print 'All done. Results stored in {0}'.format(dest)
