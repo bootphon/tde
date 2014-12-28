@@ -12,7 +12,7 @@ from joblib import Parallel, delayed
 from corpus import Interval, FragmentToken
 from acss import allcommonsubstrings
 
-def extract_batch(tokens, ixs, minlength):
+def extract_batch(tokens, ixs, minlength, maxlength):
     """Extract gold alignments between two lists.
 
     This is just a wrapper around `extract_single` to send larger batches into
@@ -41,13 +41,14 @@ def extract_batch(tokens, ixs, minlength):
         if ix is None:
             continue
         ix1, ix2 = ix
-        r_ = extract_single(tokens[ix1], tokens[ix2], minlength, ix1==ix2)
+        r_ = extract_single(tokens[ix1], tokens[ix2], minlength, maxlength,
+                            ix1==ix2)
         if r_:
             r.extend(r_)
     return r
 
 
-def extract_single(tokens1, tokens2, minlength, same):
+def extract_single(tokens1, tokens2, minlength, maxlength, same):
     """Extract gold alignments between two phone lists.
 
     Parameters
@@ -69,7 +70,8 @@ def extract_single(tokens1, tokens2, minlength, same):
     id1 = ids1[0]  # ids are all the same
     id2 = ids2[0]
     css = allcommonsubstrings(phones1, phones2,
-                              minlength=minlength, same=same)
+                              minlength=minlength, maxlength=maxlength,
+                              same=same)
     if css is None:
         return []
     r = []
@@ -85,8 +87,8 @@ def extract_single(tokens1, tokens2, minlength, same):
     return r
 
 
-def extract_gold_fragments(tokenlists, minlength=3, verbose=False, n_jobs=1,
-                           batch_size=10000):
+def extract_gold_fragments(tokenlists, minlength=3, maxlength=20,
+                           verbose=False, n_jobs=1, batch_size=10000):
     """Extract the gold fragments.
 
     Parameters
@@ -127,7 +129,8 @@ def extract_gold_fragments(tokenlists, minlength=3, verbose=False, n_jobs=1,
                                           verbose=5 if verbose else 0)
                                  (delayed(extract_batch)(tokenlists,
                                                          ixs,
-                                                         minlength)
+                                                         minlength,
+                                                         maxlength)
                                   for ixs in izip_longest(*([iter(combos)]
                                                             * batch_size)))))
     if verbose:

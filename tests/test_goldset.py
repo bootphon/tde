@@ -38,7 +38,7 @@ class TestExtractSingle(object):
 
     def test_same(self):
         for f in self.fragments:
-            assert (extract_single(f, f, 3, True) == [])
+            assert (extract_single(f, f, 3, 20, True) == [])
 
 class TestExtractGoldFragments(object):
     fragments = [[FragmentToken('wavfile1', Interval(0.0,0.1), 'a'),
@@ -67,7 +67,7 @@ class TestExtractGoldFragments(object):
               FragmentToken('wavfile1', Interval(1.0,1.3), ('m', 's', 'a'))),
              (FragmentToken('wavfile1', Interval(0.7,1.0), ('w', 'o', 'r')),
               FragmentToken('wavfile2', Interval(0.1,0.4), ('w', 'o', 'r')))]
-        assert (extract_gold_fragments(self.fragments, 3, False) == r)
+        assert (extract_gold_fragments(self.fragments, 3, 20, False) == r)
 
 class TestExtractBatch(object):
     fragments = [[FragmentToken('wavfile1', Interval(0.0,0.1), 'a'),
@@ -96,7 +96,7 @@ class TestExtractBatch(object):
               FragmentToken('wavfile1', Interval(1.0,1.3), ('m', 's', 'a'))),
              (FragmentToken('wavfile1', Interval(0.7,1.0), ('w', 'o', 'r')),
               FragmentToken('wavfile2', Interval(0.1,0.4), ('w', 'o', 'r')))]
-        assert (extract_batch(self.fragments, [(0,1), (1,2), (0,2)], 3) == r)
+        assert (extract_batch(self.fragments, [(0,1), (1,2), (0,2)], 3, 20) == r)
 
     def test_some(self):
         r = [(FragmentToken('wavfile1', Interval(0.1,0.4), ('r', 'm', 's')),
@@ -105,13 +105,13 @@ class TestExtractBatch(object):
               FragmentToken('wavfile1', Interval(0.9,1.3), ('r', 'm', 's', 'a'))),
              (FragmentToken('wavfile1', Interval(0.2,0.5), ('m', 's', 'a')),
               FragmentToken('wavfile1', Interval(1.0,1.3), ('m', 's', 'a')))]
-        assert (extract_batch(self.fragments, [(0, 1)], 3) == r)
+        assert (extract_batch(self.fragments, [(0, 1)], 3, 20) == r)
 
     def test_empty(self):
-        assert (extract_batch(self.fragments, [], 3) == [])
-        assert (extract_batch(self.fragments, None, 3) == [])
+        assert (extract_batch(self.fragments, [], 3, 20) == [])
+        assert (extract_batch(self.fragments, None, 3, 20) == [])
 
     def test_none_ix(self):
-        assert (extract_batch(self.fragments, [(1,2), None], 3) ==
+        assert (extract_batch(self.fragments, [(1,2), None], 3, 20) ==
                 [(FragmentToken('wavfile1', Interval(0.7,1.0), ('w', 'o', 'r')),
                   FragmentToken('wavfile2', Interval(0.1,0.4), ('w', 'o', 'r')))])
