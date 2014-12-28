@@ -20,12 +20,12 @@ test_requirements = [
 
 np_inc = numpy.get_include()
 
-extensions = [Extension('tde.ccss', sources=['tde/ccss.pyx'],
+extensions = [Extension('tde.substrings.ccss', sources=['tde/substrings/ccss.pyx'],
                         extra_compile_args=['-shared', '-pthread', '-fPIC',
                                             '-fwrapv', '-O3', '-Wall',
                                             '-fno-strict-aliasing'],
                         include_dirs=['/usr/include/python2.7', np_inc]),
-              Extension('tde.levenshtein', sources=['tde/levenshtein'],
+              Extension('tde.substrings.levenshtein', sources=['tde/substrings/levenshtein'],
                         extra_compile_args=['-shared', '-pthread', '-fPIC',
                                             '-fwrapv', '-O3', '-Wall',
                                             '-fno-strict-aliasing'],
@@ -34,7 +34,7 @@ extensions = [Extension('tde.ccss', sources=['tde/ccss.pyx'],
 
 build_exe_options = dict(
     init_script='Console',
-    includes=['tde.ccss', 'tde.levenshtein']
+    includes=['tde.substrings.ccss', 'tde.substrings.levenshtein']
 )
 
 setup(

@@ -29,12 +29,14 @@ test_requirements = [
 np_lib = os.path.dirname(numpy.__file__)
 np_inc = numpy.get_include()
 
-extensions = [Extension('tde.ccss', sources=['tde/ccss.pyx'],
+extensions = [Extension('tde.substrings.ccss',
+                        sources=['tde/substrings/ccss.pyx'],
                         extra_compile_args=['-shared', '-pthread', '-fPIC',
                                             '-fwrapv', '-O3', '-Wall',
                                             '-fno-strict-aliasing'],
                         include_dirs=['/usr/include/python2.7', np_inc]),
-              Extension('tde.levenshtein', sources=['tde/levenshtein.pyx'],
+              Extension('tde.substrings.levenshtein',
+                        sources=['tde/substrings/levenshtein.pyx'],
                         extra_compile_args=['-shared', '-pthread', '-fPIC',
                                             '-fwrapv', '-O3', '-Wall',
                                             '-fno-strict-aliasing'],
