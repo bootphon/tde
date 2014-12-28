@@ -2,22 +2,39 @@ import pytest
 
 from pytest import list_of
 
-import tde.sets
-import tde.corpus
+from tde.data.sets import typeset, freqs, weights
+from tde.data.fragment import FragmentToken
+from tde.data.interval import Interval
 
-class TestUnique(object):
-    @pytest.mark.randomize(l=list_of(int), choices=range(5))
-    def test_unique(self, l):
-        u = list(tde.sets.unique(l))
-        assert(len(u) == len(set(u)))
+def test_typeset():
+    pairs = [(FragmentToken(None, Interval(0,1), 'm{0}'.format(n1)),
+              FragmentToken(None, Interval(0,1), 'n{0}'.format(n2)))
+              for n1, n2 in zip(xrange(10), xrange(10,20))]
+    assert (set(list(typeset(pairs))) ==
+            set(['m{0}'.format(n) for n in xrange(10)] +
+                ['n{0}'.format(n) for n in xrange(10,20)]))
+    pairs = []
+    assert (set(list(typeset(pairs))) == set())
 
-    @pytest.mark.randomize(l=list_of(int), choices=range(5))
-    def test_conservation(self, l):
-        u = list(tde.sets.unique(l))
-        assert(all(x in u for x in l))
+    pairs = [(FragmentToken(None, Interval(0,1), 'm{0}'.format(n)),
+              FragmentToken(None, Interval(0,1), 'm{0}'.format(n)))
+             for n in xrange(10)]
+    assert (set(typeset(pairs)) == set('m{0}'.format(n) for n in xrange(10)))
 
-# class TestFlatten(object):
-#     @pytest.mark.randomize(l1=list_of(int), l2=list_of(int), choices=range(5))
-#     def test_flat(self, l1, l2):
-#         f = list(tde.sets.flatten(zip(l1, l2)))
-#         assert(all(len(x) == 1) for x in f)
+def test_freqs():
+    pairs = [(FragmentToken(None, Interval(0,1), 'm{0}'.format(n1)),
+              FragmentToken(None, Interval(0,1), 'n{0}'.format(n2)))
+              for n1, n2 in zip(xrange(10), xrange(10,20))]
+    assert (freqs(pairs) == dict({'m{0}'.format(n): 1
+                                  for n in xrange(10)}.items() +
+                                 {'n{0}'.format(n): 1
+                                  for n in xrange(10,20)}.items()))
+    pairs = []
+    assert (freqs(pairs) == dict())
+
+    pairs = [(FragmentToken(None, Interval(0,1), 'm{0}'.format(n)),
+              FragmentToken(None, Interval(0,1), 'm{0}'.format(n)))
+             for n in xrange(10)]
+    assert (freqs(pairs) == {'m{0}'.format(n): 1 for n in xrange(10)})
+
+# def test_weights():

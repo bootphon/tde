@@ -4,51 +4,91 @@
 from __future__ import division
 
 from collections import Counter, defaultdict
-from itertools import chain
 
-from .util import unique
-from .acss import pairwise_substring_completion
-from .corpus import ClassDict
-
-_flatten = chain.from_iterable
-
+from tde.util.functions import unique, iterator_length, flatten
+from tde.substrings.acss import pairwise_substring_completion
+from tde.data.classes import ClassDict
 
 def typeset(pairs):
+    """
+    Yield the unique marks in a pair iterator.
+
+    Parameters
+    ----------
+    pairs : Iterator over (FragmentToken, FragmentToken) pairs
+
+    Returns
+    -------
+    Iterator over strings
+        Unique marks.
+
+    """
     return unique(f.mark for f in flatten(pairs))
 
 
 def freqs(pairs):
-    return dict(Counter(f.mark for f in flatten(pairs)))
+    """
+    Calculate the absolute frequencies of the marks in a pair iterator.
+
+    Parameters
+    ----------
+    pairs : Iterator over (FragmentToken, FragmentToken) pairs
+
+    Returns
+    -------
+    dict from string to int
+        Counts of the marks.
+    """
+    return dict(Counter(f.mark for f in unique_flatten(pairs)))
 
 
 def weights(pairs):
-    total = len(list(flatten(pairs)))
+    """
+    Calculate the relative frequencies of the marks in a pair iterator.
+
+    Parameters
+    ----------
+    pairs : Iterator over (FragmentToken, FragmentToken) pairs
+
+    Returns
+    -------
+    dict from string to float
+        Relative frequencies of the marks.
+    """
+    total = iterator_length(unique_flatten(pairs))
     fs = freqs(pairs)
-    return {t: fs[t] / total for t in typeset(pairs)}
+    return {t: fs[t] / total for t in fs}
 
 
-def flatten(pairs):
-    r"""Flatten a sequence of ((c1, p1), (c2, p2)) pairs into a set of (c, p).
+def unique_flatten(pairs):
+    r"""
+    Flatten a sequence of (FragmentToken, FragmentToken) pairs.
+
+    This functions yields each FragmentToken only once.
 
     .. math::
 
        \mathrm{flat}(P) = \{(i, j) | \exists q(((i, j), q) \in P)\}
 
+    TODO check math
+
     Parameters
     ----------
-    pairs : iterable over (FragmentToken, FragmentToken) pairs
-        pairs
+    pairs : Iterator over (FragmentToken, FragmentToken) pairs
+
 
     Returns
     -------
-    p : iterator over FragmentTokens
+    Iterator over FragmentTokens
+
 
     """
-    return unique(_flatten(pairs))
+    return unique(flatten(pairs))
 
 
 def Pgoldclus(clsdict):
-    r"""Generate Pgoldclus - all the non-overlapping fragment pairs that have
+    r"""
+    Generate Pgoldclus - all the non-overlapping fragment pairs that have
     the same annotation.
 
     .. math::
@@ -61,22 +101,25 @@ def Pgoldclus(clsdict):
 
     Returns
     -------
-    iter : iterator (FragmentToken, FragmentToken) pairs
+    Iterator (FragmentToken, FragmentToken) pairs
 
     """
+    # partition the clsdict into fragments that have the same annotation
     d = defaultdict(set)
     for f in clsdict.iter_fragments():
         d[f.mark].add(f)
-    cd = ClassDict(dict(d))
+    d = ClassDict(dict(d))
+
     return (tuple(sorted((f1, f2),
-                             key=lambda f: (f.name, f.interval.start)))
-            for f1, f2 in cd.iter_pairs(within=True, order=False)
+                         key=lambda f: (f.name, f.interval.start)))
+            for f1, f2 in d.iter_pairs(within=True, order=False)
             if not (f1.name == f2.name
                     and f1.interval.overlap(f2.interval) > 0))
 
 
 def Pclus_single(clsdict):
-    r"""Generate Pclus - all the pairs of FragmentTokens per cluster, each
+    r"""
+    Generate Pclus - all the pairs of FragmentTokens per cluster, each
     pair only occurring once, regardless of order. Contrast with Pclus
 
     .. math::
@@ -91,7 +134,7 @@ def Pclus_single(clsdict):
 
     Returns
     -------
-    iter : iterator over FragmentToken pairs
+    Iterator over FragmentToken pairs
 
     """
     return clsdict.iter_pairs(within=True, order=False)
@@ -112,7 +155,7 @@ def Pclus(clsdict):
 
     Returns
     -------
-    iter : iterator (FragmentToken, FragmentToken) pairs
+    Iterator (FragmentToken, FragmentToken) pairs
 
     """
     return clsdict.iter_pairs(within=True, order=True)
@@ -173,7 +216,8 @@ def nmatch(pairs):
 
 
 def Psubs(clsdict, corpus, minlength=3, maxlength=20):
-    """Generate Psubs - the substring completion of a set of pairs.
+    """
+    Generate Psubs - the substring completion of a set of pairs.
 
     Psubs is the association between all substrings of the pairs in classdict.
 
@@ -188,11 +232,11 @@ def Psubs(clsdict, corpus, minlength=3, maxlength=20):
 
     Returns
     -------
-    i : iterator over (FragmentToken, FragmentToken) pairs
+    Iterator over (FragmentToken, FragmentToken) pairs
 
     """
     sub_pairs = (pairwise_substring_completion(f1, f2, corpus,
                                                minlength,
                                                maxlength)
                  for f1, f2 in clsdict.iter_pairs(within=True, order=True))
-    return flatten(sub_pairs)
+    return unique(flatten(sub_pairs))

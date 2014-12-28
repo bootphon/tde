@@ -1,10 +1,16 @@
-"""Collection sorted by a key function.
+"""
+Collection sorted by a key function.
+
+Classes
+-------
+SortedList
 
 """
 
+import collections
 from bisect import bisect_right, bisect_left
 
-class SortedList(object):
+class SortedList(collections.Sequence):
     """Collection sorted by a key function.
 
     SortedList is a wrapper around `bisect`, useful for fast lookup of
@@ -48,6 +54,15 @@ class SortedList(object):
         i = bisect_left(self._k, self._key_func(x))
         return i != len(self._k) and self._v[i] == x
 
+    def index(self, x):
+        """Find the first item equal to `x`. Raise ValueError if no such item
+        is found.
+        """
+        i = bisect_left(self._k, self._key_func(x))
+        if i != len(self._k) and self._v[i] == x:
+            return i
+        raise ValueError('item not found: {}'.format(x))
+
     def insert(self, x):
         """Insert `x`. If equal keys are found, add to the left.
         """
@@ -68,15 +83,6 @@ class SortedList(object):
         i = self.index(x)
         del self._k[i]
         del self._v[i]
-
-    def index(self, x):
-        """Find the first item equal to `x`. Raise ValueError if no such item
-        is found.
-        """
-        i = bisect_left(self._k, self._key_func(x))
-        if i != len(self._k) and self._v[i] == x:
-            return i
-        raise ValueError('item not found: {}'.format(x))
 
     def index_lt(self, x):
         """Find the index of the greatest item smaller than `x`. Raise ValueError

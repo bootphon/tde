@@ -1,6 +1,6 @@
 import pytest
 
-from tde.sortedlist import SortedList
+from tde.data.sorted_list import SortedList
 
 def test_keysvalues():
     sl = SortedList([3, 6, 1, 7, 0])
@@ -195,11 +195,11 @@ def test_tuplelist_random(l1, l2):
     l2 = l2[:len(zip1)]
     sl = SortedList(zip1, key=lambda x: x[0])
     assert(sorted(l1) == sl._k)
-    assert(sorted(zip1, key=lambda x: x[0]) == sl._v)
+    assert(sorted(zip1, key=lambda x: (x[0], x[1])) == sl._v)
 
     sl = SortedList(zip1, key=lambda x: x[1])
     assert(sorted(l2) == sl._k)
-    assert(sorted(zip1, key=lambda x: x[1]) == sl._v)
+    assert(sorted(zip1, key=lambda x: (x[1], x[0])) == sl._v)
 
     zip2 = zip(l2, l1)
     sl = SortedList(zip2, key=lambda x: x[0])
