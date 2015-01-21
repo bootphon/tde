@@ -32,10 +32,23 @@ def evaluate_token_type(disc_clsdict, wrd_corpus,
             types_hit.add(goldtok.mark)
             hits += 1
 
-    token_prec = hits / n_disc_fragments
-    token_rec = hits / n_word_tokens
+    if n_disc_fragments == 0:
+        token_prec = 0.
+    else:
+        token_prec = hits / n_disc_fragments
+    if n_word_tokens == 0:
+        token_rec = 0.
+    else:
+        token_rec = hits / n_word_tokens
 
-    type_prec = len(types_hit) / len(types_seen)
-    type_rec = len(types_hit) / n_word_types
+    if len(types_seen) == 0:
+        type_prec = 0.
+    else:
+        type_prec = len(types_hit) / len(types_seen)
+
+    if n_word_types == 0:
+        type_rec = 0.
+    else:
+        type_rec = len(types_hit) / n_word_types
 
     return token_prec, token_rec, type_prec, type_rec
