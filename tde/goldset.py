@@ -4,13 +4,14 @@
 
 from itertools import combinations, chain, izip, izip_longest
 import sys
-
 import time
 
 from joblib import Parallel, delayed
 
-from corpus import Interval, FragmentToken
-from acss import allcommonsubstrings
+from tde.substrings.acss import allcommonsubstrings
+from tde.data.fragment import FragmentToken
+from tde.data.interval import Interval
+
 
 def extract_batch(tokens, ixs, minlength, maxlength):
     """Extract gold alignments between two lists.

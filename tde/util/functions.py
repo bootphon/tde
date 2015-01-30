@@ -4,6 +4,8 @@ Assorted helper functions
 
 from __future__ import division
 
+import os.path as path
+
 from itertools import izip, chain, repeat, imap
 
 flatten = chain.from_iterable
@@ -73,7 +75,9 @@ def grouper(n, iterable, padvalue=None):
 
 def fname2speaker(corpus_type):
     if corpus_type == 'buckeye':
-        return lambda x: x[:3]
+        return lambda x: path.splitext(path.basename(x))[0][:3]
+    elif corpus_type == 'xitsonga':
+        return lambda x: path.splitext(path.basename(x))[0].split('_')[2]
     else:
         raise NotImplementedError('no implementation of fname2speaker for {0}'
                                   .format(corpus_type))
