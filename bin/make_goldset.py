@@ -6,9 +6,6 @@ import sys
 import cPickle as pickle
 import argparse
 
-from tde.goldset import extract_gold_fragments
-from tde.reader import read_phone_file
-
 
 if __name__ == '__main__':
     def parse_args():

@@ -13,36 +13,36 @@ if __name__ == '__main__':
             description='move built code into its own directory',
             epilog="""Example usage:
 
-$ python move_build sample_eval2_frozen_dir english_eval2_frozen_dir
+$ python move_build english /path/to/out/
 
-makes two new directories (will overwrite if they exist!) and moves the code there.
+makes a new directory (will overwrite if it exists!) and moves the code
+for the evaluation of the english dataset there.
 """)
-        parser.add_argument('sample_dir', metavar='SAMPLEDIR',
+        parser.add_argument('corpus', metavar='CORPUS',
                             nargs=1,
-                            help='output directory for sample_eval2 (will overwrite if exists!)')
-        parser.add_argument('english_dir', metavar='ENGLISHDIR',
+                            choices=['sample', 'english', 'xitsonga'],
+                            help='build code for which corpus')
+        parser.add_argument('output', metavar='OUTDIR',
                             nargs=1,
-                            help='output directory for english_eval2 (will overwrite if exists!)')
+                            help='output directory (will be overwritten if it exists)')
         return vars(parser.parse_args())
     args = parse_args()
+    corpus = args['corpus'][0]
+    output = args['output'][0]
 
-    sample_dir = args['sample_dir'][0]
-    english_dir = args['english_dir'][0]
+    if path.exists(output):
+        shutil.rmtree(output)
 
-    if path.exists(sample_dir):
-        shutil.rmtree(sample_dir)
-    if path.exists(english_dir):
-        shutil.rmtree(english_dir)
-
-    # sample_eval2
-    shutil.copytree('build/exe.linux-x86_64-2.7', path.join(sample_dir, 'resources/'))
-    shutil.copytree('bin/resources', path.join(sample_dir, 'resources/resources'))
-    shutil.copy('sample_eval2', path.join(sample_dir, 'sample_eval2'))
-    shutil.copy('bin/resources/sample.classes.example',
-                path.join(sample_dir, 'sample.classes.example'))
-    os.chmod(path.join(sample_dir, 'sample_eval2'), stat.S_IRUSR | stat.S_IXUSR)
-
-    shutil.copytree('build/exe.linux-x86_64-2.7', path.join(english_dir, 'resources/'))
-    shutil.copytree('bin/resources', path.join(english_dir, 'resources/resources'))
-    shutil.copy('english_eval2', path.join(english_dir, 'english_eval2'))
-    os.chmod(path.join(english_dir, 'english_eval2'), stat.S_IRUSR | stat.S_IXUSR)
+    shutil.copytree('build/exe.linux-x86_64-2.7', path.join(output, 'resources/'))
+    shutil.copytree('bin/resources', path.join(output, 'resources/resources'))
+    if corpus == 'sample':
+        shutil.copy('sample_eval2', path.join(output, 'sample_eval2'))
+        shutil.copy('bin/resources/sample.classes.example',
+                    path.join(output, 'sample.classes.example'))
+        os.chmod(path.join(output, 'sample_eval2'), stat.S_IRUSR | stat.S_IXUSR)
+    elif corpus == 'english':
+        shutil.copy('english_eval2', path.join(output, 'english_eval2'))
+        os.chmod(path.join(output, 'english_eval2'), stat.S_IRUSR | stat.S_IXUSR)
+    else:
+        shutil.copy('xitsonga_eval2', path.join(output, 'xitsonga_eval2'))
+        os.chmod(path.join(output, 'xitsonga_eval2'), stat.S_IRUSR | stat.S_IXUSR)
