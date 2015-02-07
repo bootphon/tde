@@ -32,7 +32,7 @@ class SegmentAnnotation(collections.Sequence):
     ----------
     name : string
         Identifier for the annotation.
-    tokens : list of FragmentToken objects
+    tokens : list of Fragment objects
         The sequence of annotations.
 
     Attributes

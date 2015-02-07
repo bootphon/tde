@@ -6,6 +6,8 @@ from __future__ import division
 
 from pprint import pformat
 
+import numpy as np
+
 from tde.data.sets import Pclus, Psubs, nmatch, typeset, weights
 from tde.util.printing import banner, verb_print, pretty_pairs
 from tde.util.functions import intersection
@@ -102,10 +104,21 @@ def eval_from_psets(pdisc, pgold, psubs, verbose=False, debug=False):
     psubs_nmatch = make_psubs_nmatch(psubs, verbose, debug)
     pgold_nmatch = make_pgold_nmatch(pgold, verbose, debug)
 
-    prec = sum(ws[t] * psubs_pgold_nmatch[t] / psubs_nmatch[t]
-               for t in ts if psubs_nmatch[t] > 0)
-    rec = sum(ws[t] * psubs_pgold_nmatch[t] / pgold_nmatch[t]
-              for t in ts if pgold_nmatch[t] > 0)
+    if len(psubs_nmatch) == 0:
+        prec = 0.
+    else:
+        prec = sum(ws[t] * psubs_pgold_nmatch[t] / psubs_nmatch[t]
+                   for t in ts if psubs_nmatch[t] > 0)
+        if not np.isfinite(prec):
+            prec = 0.
+
+    if len(pgold_nmatch) == 0:
+        rec = 0.
+    else:
+        rec = sum(ws[t] * psubs_pgold_nmatch[t] / pgold_nmatch[t]
+                  for t in ts if pgold_nmatch[t] > 0)
+        if not np.isfinite(rec):
+            rec = 0.
     return prec, rec
 
 def evaluate_matching(disc_clsdict, gold_clsdict, corpus, minlength=3,

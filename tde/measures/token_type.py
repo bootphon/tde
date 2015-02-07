@@ -2,6 +2,8 @@
 
 from __future__ import division
 
+import numpy as np
+
 from tde.util.printing import verb_print
 from tde.util.functions import unique, iterator_length
 
@@ -36,19 +38,28 @@ def evaluate_token_type(disc_clsdict, wrd_corpus,
         token_prec = 0.
     else:
         token_prec = hits / n_disc_fragments
+        if not np.isfinite(token_prec):
+            token_prec = 0.
+
     if n_word_tokens == 0:
         token_rec = 0.
     else:
         token_rec = hits / n_word_tokens
+        if not np.isfinite(token_rec):
+            token_rec = 0.
 
     if len(types_seen) == 0:
         type_prec = 0.
     else:
         type_prec = len(types_hit) / len(types_seen)
+        if not np.isfinite(type_prec):
+            type_prec = 0.
 
     if n_word_types == 0:
         type_rec = 0.
     else:
         type_rec = len(types_hit) / n_word_types
+        if not np.isfinite(type_rec):
+            type_rec = 0.
 
     return token_prec, token_rec, type_prec, type_rec

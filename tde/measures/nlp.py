@@ -12,7 +12,13 @@ def NED(clsdict):
                         for f1, f2 in clsdict.iter_pairs(within=True,
                                                          order=False)),
                        dtype=np.double)
-    return neds.mean()
+    if len(neds) == 0:
+        r = 1.0
+    else:
+        r = neds.mean()
+        if not np.isfinite(r):
+            r = 1.0
+    return r
 
 class Node(object):
     def __init__(self, value):
@@ -115,7 +121,16 @@ def coverage(disc_clsdict, gold_clsdict):
     float
         Relative coverage
     """
-    return cover(disc_clsdict) / cover(gold_clsdict)
+    num = cover(disc_clsdict)
+    den = cover(gold_clsdict)
+    if np.isclose(den, 0.) or np.isclose(num, 0):
+        c = 0
+    else:
+        c = num  / den
+    if not np.isfinite(c):
+        c = 0.
+    return c
+
 
 def ued(s1, s2):
     """Unnormalized edit distance.

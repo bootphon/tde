@@ -44,7 +44,7 @@ extensions = [Extension('tde.substrings.ccss',
 
 setup(
     name='tde',
-    version='0.1.1',
+    version='0.1.2',
     description='DESCRIPTION',
     long_description=readme + '\n\n' + history,
     author='Maarten Versteegh',

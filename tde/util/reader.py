@@ -95,7 +95,6 @@ def read_classfile(contents):
 
 
 def read_annotation(contents):
-
     ID_prev = None
     interval_prev = None
     r = []

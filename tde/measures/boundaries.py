@@ -45,12 +45,25 @@ class Boundaries(object):
                 yield name, point
 
 def eval_from_bounds(disc, gold):
-    prec = np.fromiter((gold.has_close(n, p)
+    gold_close = np.fromiter((gold.has_close(n, p)
                         for n, p in disc),
-                       dtype=np.bool).mean()
-    rec = np.fromiter((disc.has_close(n, p)
-                       for n, p in gold),
-                      dtype=np.bool).mean()
+                       dtype=np.bool)
+    if gold_close.shape[0] > 0:
+        prec = gold_close.mean()
+        if not np.isfinite(prec):
+            prec = 0.
+    else:
+        prec = 0.
+
+    disc_close = np.fromiter((disc.has_close(n, p)
+                              for n, p in gold),
+                             dtype=np.bool)
+    if disc_close.shape[0] > 0:
+        rec = disc_close.mean()
+        if not np.isfinite(rec):
+            rec = 0.
+    else:
+        rec = 0.
     return prec, rec
 
 

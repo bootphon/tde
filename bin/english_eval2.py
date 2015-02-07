@@ -10,7 +10,7 @@ from itertools import izip
 import numpy as np
 from joblib import Parallel, delayed
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 from tde.util.reader import load_classes_txt, load_corpus_txt, load_split
 from tde.util.printing import verb_print, banner, pretty_score_f, \
@@ -93,13 +93,13 @@ def _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names, label,
                              verbose, True, True, True):
         pdiscs = [make_pdisc(disc_clsdict.restrict(fs, True),
                              False, False)
-                  for fs in fragments_cross]
+                  for fs in names]
         pgolds = [make_pgold(gold_clsdict.restrict(fs, True),
                              False, False)
-                  for fs in fragments_cross]
+                  for fs in names]
         psubs = [make_psubs(disc_clsdict.restrict(fs, True),
                             phn_corpus, 3, 20, False, False)
-                 for fs in fragments_cross]
+                 for fs in names]
     with verb_print('  matching ({0}): calculating scores'
                              .format(label), verbose, False, True, False):
         tp, tr = izip(*Parallel(n_jobs=n_jobs,

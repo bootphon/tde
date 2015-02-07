@@ -17,6 +17,8 @@
 from __future__ import division
 from pprint import pformat
 
+import numpy as np
+
 from tde.data.sets import Pclus_single, Pgoldclus, typeset, weights, nmatch
 from tde.util.printing import verb_print, banner, pretty_pairs
 from tde.util.functions import intersection
@@ -99,9 +101,19 @@ def evaluate_group(disc_clsdict, verbose=False, debug=False):
     pclus_nmatch = make_pclus_nmatch(pclus, verbose, debug)
     pgoldclus_nmatch = make_pgoldclus_nmatch(Pgoldclus(disc_clsdict),
                                              verbose, debug)
+    if len(pclus_nmatch) == 0:
+        prec = 0.
+    else:
+        prec = sum(ws[t] * pclus_pgoldclus_nmatch[t] / pclus_nmatch[t]
+                   for t in ts if pclus_nmatch[t] > 0)
+        if not np.isfinite(prec):
+            prec = 0.
 
-    prec = sum(ws[t] * pclus_pgoldclus_nmatch[t] / pclus_nmatch[t]
-               for t in ts if pclus_nmatch[t] > 0)
-    rec = sum(ws[t] * pclus_pgoldclus_nmatch[t] / pgoldclus_nmatch[t]
-              for t in ts if pgoldclus_nmatch[t] > 0)
+    if len(pgoldclus_nmatch) == 0:
+        rec = 0.
+    else:
+        rec = sum(ws[t] * pclus_pgoldclus_nmatch[t] / pgoldclus_nmatch[t]
+                  for t in ts if pgoldclus_nmatch[t] > 0)
+        if not np.isfinite(rec):
+            rec = 0.
     return prec, rec
