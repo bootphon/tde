@@ -7,20 +7,27 @@ import numpy as np
 from tde.util.functions import flatten
 
 class Boundaries(object):
-    def __init__(self, container):
+    def __init__(self, container, threshold=0.03):
+        self.threshold = threshold
         if hasattr(container, 'iter_fragments'):
             iterator = container.iter_fragments()
         else:
             iterator = (f for f in container)
 
         bounds = defaultdict(list)
+        length = 0
         for fragment in iterator:
             bounds[fragment.name].append(fragment.interval)
+            length += 1
+        self.length = length
         self.bounds = {}
         for name, intervals in bounds.iteritems():
             points = set(flatten((interval.start, interval.end)
                                   for interval in intervals))
             self.bounds[name] = np.sort(np.array(list(points)))
+
+    def __len__(self):
+        return self.length
 
     def has_close(self, name, query_point):
         if not name in self.bounds:
@@ -36,7 +43,7 @@ class Boundaries(object):
                 found_point = points[ix-1]
             else:
                 found_point = points[ix]
-            b = np.abs(found_point - query_point) < 0.03
+            b = np.abs(found_point - query_point) < self.threshold
         return b
 
     def __iter__(self):
@@ -46,8 +53,8 @@ class Boundaries(object):
 
 def eval_from_bounds(disc, gold):
     gold_close = np.fromiter((gold.has_close(n, p)
-                        for n, p in disc),
-                       dtype=np.bool)
+                              for n, p in disc),
+                             dtype=np.bool)
     if gold_close.shape[0] > 0:
         prec = gold_close.mean()
         if not np.isfinite(prec):
