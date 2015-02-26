@@ -8,8 +8,10 @@ def banner(s):
 
 
 def pretty_pairs(pclus_set):
-    strings = [('({0} {1} {2})'.format(f1.name, f1.interval, f1.mark),
-                '({0} {1} {2})'.format(f2.name, f2.interval, f2.mark))
+    strings = [('<{0} [{1:.3f},{2:.3f}] ({3})>'.format(f1.name, f1.interval.start,
+                                                       f1.interval.end, ' '.join(f1.mark)),
+                '<{0} [{1:.3f},{2:.3f}] ({3})>'.format(f2.name, f2.interval.start,
+                                                       f2.interval.end, ' '.join(f2.mark)))
                for f1, f2 in pclus_set]
     if len(strings) == 0:
         return ''
