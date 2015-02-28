@@ -72,7 +72,7 @@ def load(phndir, wrddir, outdir):
     phn_fragments = [[f for f in fl if not f.mark in ['sil', 'sp']]
                      for fl in phn_fragments]
     wrd_fragments = [[f for f in fl if not f.mark in ['sil', 'sp']]
-                     for fl in phn_fragments]
+                     for fl in wrd_fragments]
 
     intervals_from_phn = {fl[0].name: Interval(fl[0].interval.start,
                                                fl[-1].interval.end)
