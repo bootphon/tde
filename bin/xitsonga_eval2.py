@@ -10,7 +10,7 @@ from itertools import izip
 import numpy as np
 from joblib import Parallel, delayed
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 from tde.util.reader import load_classes_txt, load_corpus_txt, load_split
 from tde.util.printing import verb_print, banner, pretty_score_f, \
