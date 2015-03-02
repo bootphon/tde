@@ -9,18 +9,18 @@ from tde.data.interval import Interval
 
 def NED(clsdict):
     neds = []
-    for i in range(20):
+    for i in range(30):
         neds.append([])
     for f1, f2 in clsdict.iter_pairs(within=True, order=False):
         l = max(len(f1.mark), len(f2.mark))
-        neds[l].append(ned(f1.mark, f2.mark))
+        neds[l-1].append(ned(f1.mark, f2.mark))
 
     for l, l_neds in enumerate(neds):
         if len(l_neds) == 0:
             r = np.nan
         else:
             r = np.array(l_neds).mean()
-        neds[l] = r
+        neds[l] = [r]
     return neds
 
 class Node(object):

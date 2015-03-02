@@ -233,11 +233,19 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
                                                     for ns in names)
     # don't replace nan's by 1, but ignore them, unless all values in ned_score
     # are nan
-    ned_score = np.array(ned_score)
-    ned_score = ned_score[np.logical_not(np.isnan(ned_score))]
-    if ned_score.shape[0] == 0:
-        ned_score = np.array([1.])
-    return np.array(ned_score), np.array(cov_score)
+    new_ned = []
+    for i in range(100):
+        new_ned.append([])
+    for l, ned_sample in enumerate(ned_score):
+        new_ned[l] += ned_sample
+
+    for l_ned in new_ned:
+        l_ned = np.array(l_ned)
+        l_ned = l_ned[np.logical_not(np.isnan(l_ned))]
+        if l_ned.shape[0] == 0:
+            l_ned = np.array([1.])
+
+    return new_ned, np.array(cov_score)
 
 
 def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
@@ -248,8 +256,6 @@ def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
                       verbose, n_jobs)
     nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, fragments_within, 'within',
                       verbose, n_jobs)
-    print nc
-    print nw
     with open(path.join(dest, 'nlp'), 'w') as fid:
         fid.write(pretty_score_nlp(nc, cc, 'NLP within-speaker',
                                        len(fragments_within),

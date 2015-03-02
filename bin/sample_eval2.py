@@ -234,10 +234,16 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
     # don't replace nan's by 1, but ignore them, unless all values in ned_score
     # are nan
     ned_score = np.array(ned_score)
-    ned_score = ned_score[np.logical_not(np.isnan(ned_score))]
-    if ned_score.shape[0] == 0:
-        ned_score = np.array([1.])
-    return np.array(ned_score), np.array(cov_score)
+    ned_score = np.swapaxes(ned_score, 0, 2)
+    ned_score = ned_score[0]
+    filtered_scores = []
+    for l_ned in ned_score:
+        aux = l_ned[np.logical_not(np.isnan(l_ned))]
+        if aux.shape[0] == 0:
+            aux = np.array([1.0])
+        filtered_scores.append(aux)
+
+    return np.array(filtered_scores), np.array(cov_score)
 
 
 def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
