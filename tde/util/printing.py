@@ -47,12 +47,13 @@ def pretty_score_nlp(ned_score, coverage_score, label, nfolds, nsamples):
     r += '{label}\n#folds:    {nfolds}\n#samples:  {nsamples}\n'.format(
         label=label, nfolds=nfolds, nsamples=nsamples)
     r += '{sep}\n'.format(sep=37*'-')
-    r += '{score:9s}  {mean:5s}  {std:5s}  {min:5s}  {max:5s}\n'.format(
-        score="measure", mean="mean", std="std", min="min", max="max")
+    r += '{score:9s}  {mean:5s}  {std:5s}  {min:5s}  {max:5s} {len:5s}\n'.format(
+        score="measure", mean="mean", std="std", min="min", max="max", len="len")
     r += '---------  -----  -----  -----  -----\n'
-    r += '{score:9s}  {mean:.3f}  {std:.3f}  {min:.3f}  {max:.3f}\n'.format(
-        score="NED", mean=ned_score.mean(), std=ned_score.std(),
-        min=ned_score.min(), max=ned_score.max())
+    for l, l_ned in enumerate(ned_score):
+        r += '{score:9s}  {mean:.3f}  {std:.3f}  {min:.3f}  {max:.3f} {len}\n'.format(
+            score="NED", mean=l_ned.mean(), std=l_ned.std(),
+            min=l_ned.min(), max=l_ned.max(), len=l+1)
     r += '{score:9s}  {mean:.3f}  {std:.3f}  {min:.3f}  {max:.3f}\n'.format(
         score="coverage", mean=coverage_score.mean(), std=coverage_score.std(),
         min=coverage_score.min(), max=coverage_score.max())

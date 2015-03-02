@@ -8,15 +8,20 @@ from tde.substrings.levenshtein import distance
 from tde.data.interval import Interval
 
 def NED(clsdict):
-    neds = np.fromiter((ned(f1.mark, f2.mark)
-                        for f1, f2 in clsdict.iter_pairs(within=True,
-                                                         order=False)),
-                       dtype=np.double)
-    if len(neds) == 0:
-        r = np.nan
-    else:
-        r = neds.mean()
-    return r
+    neds = []
+    for i in range(20):
+        neds.append([])
+    for f1, f2 in clsdict.iter_pairs(within=True, order=False):
+        l = max(len(f1.mark), len(f2.mark))
+        neds[l].append(ned(f1.mark, f2.mark))
+
+    for l, l_neds in enumerate(neds):
+        if len(l_neds) == 0:
+            r = np.nan
+        else:
+            r = np.array(l_neds).mean()
+        neds[l] = r
+    return neds
 
 class Node(object):
     def __init__(self, value):
