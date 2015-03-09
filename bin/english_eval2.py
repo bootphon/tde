@@ -248,8 +248,6 @@ def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
                       verbose, n_jobs)
     nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, fragments_within, 'within',
                       verbose, n_jobs)
-    print nc
-    print nw
     with open(path.join(dest, 'nlp'), 'w') as fid:
         fid.write(pretty_score_nlp(nc, cc, 'NLP within-speaker',
                                        len(fragments_within),
