@@ -11,7 +11,7 @@ ClassDict
 """
 
 from pprint import pformat
-from itertools import izip, repeat, combinations
+from itertools import izip, repeat, combinations, ifilterfalse
 import collections
 
 from tde.util.functions import unique, flatten
@@ -118,8 +118,8 @@ class ClassDict(collections.Mapping):
                 pairs = (tuple(sorted((f1, f2),
                                       key=lambda f: (f.name, f.interval.start)))
                          for f1, f2 in combinations(flatten(vals), 2))
-        return unique(pairs)
-
+        return unique(ifilterfalse(lambda f: f[0].interval.overlaps_with(f[1].interval),
+                                   pairs))
 
     def restrict(self, interval_db, remove_singletons=False):
         """

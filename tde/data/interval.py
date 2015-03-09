@@ -77,6 +77,7 @@ class Interval(object):
         self.end = end
         self.minimum_overlap = minimum_overlap
         self.minimum_overlap_fraction = minimum_overlap_fraction
+        self._length = self.end - self.start
 
     def __repr__(self):
         return '[{0},{1}]'.format(self.start, self.end)
@@ -109,7 +110,7 @@ class Interval(object):
         float
 
         """
-        return self.end - self.start
+        return self._length
 
     def overlap(self, other):
         """
@@ -172,10 +173,13 @@ class Interval(object):
         over = self.overlap(other)
         if np.isclose(over, 0.0):
             return False
-        time_overlaps = over > self.minimum_overlap
-        frac_overlaps1 = over > self.minimum_overlap_fraction * other.length()
-        frac_overlaps2 = over > self.minimum_overlap_fraction * self.length()
-        return time_overlaps or frac_overlaps1 or frac_overlaps2
+        if over > self.minimum_overlap:
+            return True
+        if over > self.minimum_overlap_fraction * other.length():
+            return True
+        if over > self.minimum_overlap_fraction * self.length():
+            return True
+        return False
 
     def contains(self, other):
         """
