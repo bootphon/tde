@@ -107,8 +107,8 @@ def _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names, label,
                                 pre_dispatch='n_jobs')
                       (delayed(em)(pdisc, pgold, psub)
                       for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
-    tp, tp = np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
-    tp, tr = aggregate(tp, 0), aggregate(tr, 0)
+    tp, tr = np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
+    tp, tr = praggregate(tp, tr)
     return tp, tr
 
 
@@ -146,7 +146,7 @@ def _group_sub(disc_clsdict, names, label, verbose, n_jobs):
                      (delayed(eg)(disc_clsdict.restrict(ns, True))
                       for ns in names)))
     p, r = np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
-    p, r = aggregate(p, 0), aggregate(r, 0)
+    p, r = praggregate(p, r)
     return p, r
 
 def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs):
@@ -177,7 +177,8 @@ def _token_type_sub(clsdict, wrd_corpus, names, label, verbose, n_jobs):
                                        wrd_corpus.restrict(ns))
                                     for ns in names))
     pto, rto, pty, rty = np.array(pto), np.array(rto), np.array(pty), np.array(rty)
-    pto, rto, pty, rty = aggregate(pto), aggregate(rto), aggregate(pty), aggregate(rty)
+    pto, rto = praggregate(pto, rto)
+    pty, rty = praggregate(pty, rty)
 
     return pto, rto, pty, rty
 
@@ -280,9 +281,9 @@ def _boundary_sub(disc_clsdict, corpus, names, label, verbose, n_jobs):
                               pre_dispatch='2*n_jobs') \
                     (delayed(eb)(disc, gold)
                      for disc, gold in zip(disc_bounds, gold_bounds)))
-    b, r = np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
-    b, r = aggregate(b), aggregate(r)
-    return b, r
+    p, r = np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
+    p, r = praggregate(p, r)
+    return p, r
 
 
 def boundary(disc_clsdict, corpus, fragments_within, fragments_cross,
@@ -315,10 +316,11 @@ def praggregate(p_array, r_array, default_score=0.):
     p_array, r_array = np.array(p_array), np.array(r_array)
     p_index = np.logical_not(np.isnan(p_array))
     r_index = np.logical_not(np.isnan(r_array))
-    index = np.and(p_index, r_index)
+    index = np.logical_and(p_index, r_index)
     p_array, r_array = p_array[index], r_array[index]
     if not np.any(index):
         p_array, r_array = np.array([default_score]), np.array([default_score])
+    return p_array, r_array
 
 def _load_corpus(fname):
     return load_corpus_txt(fname)

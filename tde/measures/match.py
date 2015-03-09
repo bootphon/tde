@@ -98,7 +98,8 @@ def make_pgold_nmatch(pgold, verbose, debug):
 
 def eval_from_psets(pdisc, pgold, psubs, verbose=False, debug=False):
     ts = make_typeset(psubs, verbose, debug)
-    ws = make_weights(psubs, verbose, debug)
+    ws_disc = make_weights(psubs, verbose, debug)
+    ws_gold = make_weights(pgold, verbose, debug)
     psubs_pgold_nmatch = make_psubs_pgold_nmatch(pgold, psubs,
                                                  verbose, debug)
     psubs_nmatch = make_psubs_nmatch(psubs, verbose, debug)
@@ -107,13 +108,13 @@ def eval_from_psets(pdisc, pgold, psubs, verbose=False, debug=False):
     if len(psubs_nmatch) == 0:
         prec = np.nan
     else:
-        prec = sum(ws[t] * psubs_pgold_nmatch[t] / psubs_nmatch[t]
+        prec = sum(ws_disc[t] * psubs_pgold_nmatch[t] / psubs_nmatch[t]
                    for t in ts if psubs_nmatch[t] > 0)
 
     if len(pgold_nmatch) == 0:
         rec = np.nan
     else:
-        rec = sum(ws[t] * psubs_pgold_nmatch[t] / pgold_nmatch[t]
+        rec = sum(ws_gold[t] * psubs_pgold_nmatch[t] / pgold_nmatch[t]
                   for t in ts if pgold_nmatch[t] > 0)
     return prec, rec
 
