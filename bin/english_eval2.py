@@ -107,10 +107,8 @@ def _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names, label,
                                 pre_dispatch='n_jobs')
                       (delayed(em)(pdisc, pgold, psub)
                       for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
-    tp = np.fromiter(tp, dtype=np.double)
-    tr = np.fromiter(tr, dtype=np.double)
-    tp = aggregate(tp, 0)
-    tr = aggregate(tr, 0)
+    tp, tp = np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
+    tp, tr = aggregate(tp, 0), aggregate(tr, 0)
     return tp, tr
 
 def match(disc_clsdict, gold_clsdict, phn_corpus,
@@ -146,10 +144,8 @@ def _group_sub(disc_clsdict, names, label, verbose, n_jobs):
                               pre_dispatch='n_jobs')
                      (delayed(eg)(disc_clsdict.restrict(ns, True))
                       for ns in names)))
-    p = np.fromiter(p, dtype=np.double)
-    r = np.fromiter(r, dtype=np.double)
-    p = aggregate(p, 0)
-    r = aggregate(r, 0)
+    p, r = np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
+    p, r = aggregate(p, 0), aggregate(r, 0)
     return p, r
 
 def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs):
@@ -161,6 +157,7 @@ def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs
     pw, rw = _group_sub(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
     fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'group'), 'w') as fid:
+        print pc, rc, fc
         fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
                                          len(fragments_cross),
                                          sum(map(len, fragments_cross))))
@@ -244,12 +241,8 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
                                                     for ns in names)
     # don't replace nan's by 1, but ignore them, unless all values in ned_score
     # are nan
-    ned_score = np.array(ned_score)
-    ned_score = aggregate(ned_score, 1)
-
-    cov_score = np.array(cov_score)
-    cov_score = aggregate(cov_score, 0)
-
+    ned_score, cov_score = np.array(ned_score), np.array(cov_score)
+    ned_score, cov_score = aggregate(ned_score, 1), aggregate(cov_score)
     return np.array(ned_score), np.array(cov_score)
 
 
