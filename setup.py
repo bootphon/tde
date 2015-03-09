@@ -51,7 +51,7 @@ setup(
     author_email='maartenversteegh@gmail.com',
     url='https://github.com/mwv/tde',
     packages=[
-        'tde',
+        'tde', 'tde.data', 'tde.util',  'tde.measures', 'tde.substrings'
     ],
     package_dir={'tde':
                  'tde'},

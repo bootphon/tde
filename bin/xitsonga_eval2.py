@@ -250,6 +250,10 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
                                                      gold_clsdict.restrict(ns,
                                                                            False))
                                     for ns in names)
+    ned_score = np.array(ned_score)
+    ned_score = ned_score[np.logical_not(np.isnan(ned_score))]
+    if ned_score.shape[0] == 0:
+        ned_score = np.array([1.])
     return np.array(ned_score), np.array(cov_score)
 
 
