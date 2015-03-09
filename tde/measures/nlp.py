@@ -13,11 +13,9 @@ def NED(clsdict):
                                                          order=False)),
                        dtype=np.double)
     if len(neds) == 0:
-        r = 1.0
+        r = np.nan
     else:
         r = neds.mean()
-        if not np.isfinite(r):
-            r = 1.0
     return r
 
 class Node(object):
