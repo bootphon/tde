@@ -21,7 +21,7 @@ from tde.util.functions import fscore
 from tde.measures.nlp import NED, coverage
 from tde.measures.group import evaluate_group
 from tde.measures.boundaries import Boundaries, eval_from_bounds
-from tde.measures.match import eval_from_psets, make_pdisc, make_pgold, \
+from tde.measures.weighted_match import eval_from_psets, make_pdisc, make_pgold, \
     make_psubs
 from tde.measures.token_type import evaluate_token_type
 

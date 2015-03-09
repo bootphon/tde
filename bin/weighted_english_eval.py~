@@ -106,7 +106,7 @@ def _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names, label,
                                 verbose=5 if verbose else 0,
                                 pre_dispatch='n_jobs')
                       (delayed(em)(pdisc, pgold, psub)
-                       for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
+                      for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
     return np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
 
 
@@ -230,7 +230,13 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
                                                                            False),
                                                      gold_clsdict.restrict(ns,
                                                                            False))
-                                    for ns in names)
+                                                    for ns in names)
+    # don't replace nan's by 1, but ignore them, unless all values in ned_score
+    # are nan
+    ned_score = np.array(ned_score)
+    ned_score = ned_score[np.logical_not(np.isnan(ned_score))]
+    if ned_score.shape[0] == 0:
+        ned_score = np.array([1.])
     return np.array(ned_score), np.array(cov_score)
 
 
@@ -242,6 +248,8 @@ def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
                       verbose, n_jobs)
     nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, fragments_within, 'within',
                       verbose, n_jobs)
+    print nc
+    print nw
     with open(path.join(dest, 'nlp'), 'w') as fid:
         fid.write(pretty_score_nlp(nc, cc, 'NLP within-speaker',
                                        len(fragments_within),
@@ -328,14 +336,14 @@ if __name__ == '__main__':
     import argparse
     def parse_args():
         parser = argparse.ArgumentParser(
-            prog='sample_eval2',
+            prog='english_eval2',
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            description='Evaluate spoken term discovery on the sample dataset',
+            description='Evaluate spoken term discovery on the english dataset',
             epilog="""Example usage:
 
-$ ./sample_eval2 my_sample.classes resultsdir/
+$ ./english_eval2 my_sample.classes resultsdir/
 
-evaluates STD output `my_sample.classes` on the sample dataset and stores the
+evaluates STD output `my_sample.classes` on the english dataset and stores the
 output in `resultsdir/`.
 
 Classfiles must be formatted like this:
@@ -400,17 +408,18 @@ fileID starttime endtime
         rdir = path.dirname(path.realpath(__file__))
         resource_dir = path.join(rdir, 'resources')
 
-    fragments_cross_file  = path.join(resource_dir, 'sample.intervals.cross')
-    fragments_within_file = path.join(resource_dir, 'sample.intervals.within')
-    gold_clsfile          = path.join(resource_dir, 'sample.classes')
-    phn_corpus_file       = path.join(resource_dir, 'sample.phn')
-    wrd_corpus_file       = path.join(resource_dir, 'sample.wrd')
-    split_file            = path.join(resource_dir, 'sample.split')
+
+    fragments_cross_file  = path.join(resource_dir, 'english.intervals.cross')
+    fragments_within_file = path.join(resource_dir, 'english.intervals.within')
+    gold_clsfile          = path.join(resource_dir, 'english.classes')
+    phn_corpus_file       = path.join(resource_dir, 'english.phn')
+    wrd_corpus_file       = path.join(resource_dir, 'english.wrd')
+    split_file            = path.join(resource_dir, 'english.split')
 
     if verbose:
-        print 'sample_eval2 version {0}'.format(VERSION)
-        print '--------------------------'
-        print 'dataset:     sample'
+        print 'english_eval2 version {0}'.format(VERSION)
+        print '---------------------------'
+        print 'dataset:     english'
         print 'inputfile:   {0}'.format(disc_clsfile)
         print 'destination: {0}'.format(dest)
         print

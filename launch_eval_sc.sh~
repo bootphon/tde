@@ -1,0 +1,80 @@
+KWARGS=""
+NCORES=1
+while [ -n "$1" ]; do
+        # Copy so we can modify it (can't modify $1)
+        OPT="$1"
+        # Detect argument termination
+        if [ x"$OPT" = x"--" ]; then
+                shift
+                for OPT ; do
+                        REMAINS="$REMAINS \"$OPT\""
+                done
+                break
+        fi
+        # Parse current opt
+        while [ x"$OPT" != x"-" ] ; do
+                case "$OPT" in
+                        # Handle --flag=value opts like this
+                        -m=* | --measure=* )
+                                MEASURE="${OPT#*=}"
+				KWARGS="${KWARGS} -m ${MEASURE}"
+                                shift
+                                ;;
+                        # and --flag value opts like this
+                        -m* | --measure )
+                                MEASURE="$2"
+				KWARGS="${KWARGS} -m ${MEASURE}"
+                                shift
+                                ;;
+                        -j=* | --ncores=* )
+                                NCORES="${OPT#*=}"
+				KWARGS="${KWARGS} -j ${NCORES}"
+                                shift
+                                ;;
+                        # and --flag value opts like this
+                        -j* | --ncores )
+                                NCORES="$2"
+				KWARGS="${KWARGS} -j ${NCORES}"
+				shift
+                                ;;
+                        -o=* | --output=* )
+                                OUTDIR="${OPT#*=}/"
+                                shift
+                                ;;
+                        # and --flag value opts like this
+                        -o* | --output )
+                                OUTDIR="${2}/"
+                                shift
+                                ;;
+                        -v* | --verbose )
+				KWARGS="${KWARGS} -v"
+                                VERBOSE=true
+                                ;;
+                        # Anything unknown is recorded for later
+                        * )
+                                REMAINS="$REMAINS \"$OPT\""
+                                break
+                                ;;
+                esac
+                # Check for multiple short options
+                # NOTICE: be sure to update this pattern to match valid options
+                NEXTOPT="${OPT#-[cfr]}" # try removing single short opt
+                if [ x"$OPT" != x"$NEXTOPT" ] ; then
+                        OPT="-$NEXTOPT"  # multiple short opts, keep going
+                else
+                        break  # long form, exit inner loop
+                fi
+        done
+        # Done with that param. move to next
+        shift
+done
+# Set the non-parameters back into the positional parameters ($1 $2 ..)
+eval set -- $REMAINS    
+
+echo $@
+
+for i in "${@}"; do
+    echo "python bin/english_eval2.py ${i} ${OUTDIR}res_${i##*/} ${KWARGS}"
+    echo "python bin/english_eval2.py ${i} ${OUTDIR}res_${i##*/} ${KWARGS}" > "qsub_${i##*/}"
+    qsub -N eval2 -j y -cwd -pe openmpi_ib $NCORES -q cpu  -S /bin/bash "qsub_${i##*/}"
+done

@@ -1,0 +1,7 @@
+Warning: no access to tty (Bad file descriptor).
+Thus no job control in this shell.
+export: Command not found.
+Traceback (most recent call last):
+  File "bin/english_eval2.py", line 11, in <module>
+    from joblib import Parallel, delayed
+ImportError: No module named joblib

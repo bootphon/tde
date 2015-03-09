@@ -101,24 +101,31 @@ def eval_from_psets(pdisc, pgold, psubs, verbose=False, debug=False):
     ts_gold = make_typeset(pgold, verbose, debug)  # pgold already contains substring completion
     psubs_pgold_nmatch = make_psubs_pgold_nmatch(pgold, psubs,
                                                  verbose, debug)
+
     psubs_nmatch = make_psubs_nmatch(psubs, verbose, debug)
     pgold_nmatch = make_pgold_nmatch(pgold, verbose, debug)
 
-    ts_disc = [t for t in ts_disc if psubs_nmatch[t] > 0]  # most likely useless
+    # ts_disc = [t for t in ts_disc if psubs_nmatch[t] > 0]  # most likely useless
     # ts_gold = [t for t in ts_gold if pgold_nmatch[t] > 0]
+
+    ws_disc = make_weights(psubs, verbose, debug)
+    ws_gold = make_weights(pgold, verbose, debug)
+
+    len_disc = sum(len(t) for t in ts_disc)
+    len_gold = sum(len(t) for t in ts_gold)
 
     if len(psubs_nmatch) == 0:
         prec = 0.
     else:
-        prec = sum(psubs_pgold_nmatch[t] / psubs_nmatch[t]
-                   for t in ts_disc) / len(ts_disc)
+        prec = sum(len(t) * ws_disc[t] * psubs_pgold_nmatch[t] / psubs_nmatch[t]
+                   for t in ts_disc) / len_disc
         if not np.isfinite(prec):
             prec = 0.
 
     if len(pgold_nmatch) == 0:
         rec = 0.
     else:
-        rec = sum(psubs_pgold_nmatch[t] / pgold_nmatch[t]
+        rec = sum(len(t) * ws_gold[t] * psubs_pgold_nmatch[t] / pgold_nmatch[t]
                   for t in ts_disc) / len(ts_gold)
         if not np.isfinite(rec):
             rec = 0.
