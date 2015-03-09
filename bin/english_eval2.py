@@ -120,11 +120,11 @@ def match(disc_clsdict, gold_clsdict, phn_corpus,
         print banner('MATCHING')
     pc, rc = _match_sub(disc_clsdict, gold_clsdict, phn_corpus,
                         fragments_cross, 'cross', verbose, n_jobs)
-    fc = np.vectorize(fscore)(pc, rc)
+    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
 
     pw, rw = _match_sub(disc_clsdict, gold_clsdict, phn_corpus,
                         fragments_within, 'within', verbose, n_jobs)
-    fw = np.vectorize(fscore)(pw, rw)
+    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'matching'), 'w') as fid:
         fid.write(pretty_score_f(pc, rc, fc, 'match cross-speaker',
                                          len(fragments_cross),
@@ -156,10 +156,10 @@ def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs
     if verbose:
         print banner('GROUP')
     pc, rc = _group_sub(disc_clsdict, fragments_cross, 'cross', verbose, n_jobs)
-    fc = np.vectorize(fscore)(pc, rc)
+    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
 
     pw, rw = _group_sub(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
-    fw = np.vectorize(fscore)(pw, rw)
+    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'group'), 'w') as fid:
         fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
                                          len(fragments_cross),
@@ -190,14 +190,18 @@ def token_type(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
     ptoc, rtoc, ptyc, rtyc = _token_type_sub(disc_clsdict, wrd_corpus,
                                              fragments_cross, 'cross',
                                              verbose, n_jobs)
-    ftoc = np.vectorize(fscore)(ptoc, rtoc)
-    ftyc = np.vectorize(fscore)(ptyc, rtyc)
+    ftoc = np.fromiter((fscore(ptoc[i], rtoc[i]) for i in xrange(ptoc.shape[0])),
+                       dtype=np.double)
+    ftyc = np.fromiter((fscore(ptyc[i], rtyc[i]) for i in xrange(ptyc.shape[0])),
+                       dtype=np.double)
 
     ptow, rtow, ptyw, rtyw = _token_type_sub(disc_clsdict, wrd_corpus,
                                              fragments_within, 'within',
                                              verbose, n_jobs)
-    ftow = np.vectorize(fscore)(ptow, rtow)
-    ftyw = np.vectorize(fscore)(ptyw, rtyw)
+    ftow = np.fromiter((fscore(ptow[i], rtow[i]) for i in xrange(ptow.shape[0])),
+                       dtype=np.double)
+    ftyw = np.fromiter((fscore(ptyw[i], rtyw[i]) for i in xrange(rtyw.shape[0])),
+                       dtype=np.double)
     with open(path.join(dest, 'token_type'), 'w') as fid:
         fid.write(pretty_score_f(ptoc, rtoc, ftoc, 'token cross-speaker',
                                  len(fragments_cross),
@@ -295,10 +299,10 @@ def boundary(disc_clsdict, corpus, fragments_within, fragments_cross,
         print banner('BOUNDARY')
     pc, rc = _boundary_sub(disc_clsdict, corpus, fragments_cross,
                            'cross', verbose, n_jobs)
-    fc = np.vectorize(fscore)(pc, rc)
+    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
     pw, rw = _boundary_sub(disc_clsdict, corpus, fragments_within,
                            'within', verbose, n_jobs)
-    fw = np.vectorize(fscore)(pw, rw)
+    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'boundary'), 'w') as fid:
         fid.write(pretty_score_f(pc, rc, fc, 'boundary cross-speaker',
                                          len(fragments_cross),
