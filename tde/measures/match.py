@@ -105,20 +105,16 @@ def eval_from_psets(pdisc, pgold, psubs, verbose=False, debug=False):
     pgold_nmatch = make_pgold_nmatch(pgold, verbose, debug)
 
     if len(psubs_nmatch) == 0:
-        prec = 0.
+        prec = np.nan
     else:
         prec = sum(ws[t] * psubs_pgold_nmatch[t] / psubs_nmatch[t]
                    for t in ts if psubs_nmatch[t] > 0)
-        if not np.isfinite(prec):
-            prec = 0.
 
     if len(pgold_nmatch) == 0:
-        rec = 0.
+        rec = np.nan
     else:
         rec = sum(ws[t] * psubs_pgold_nmatch[t] / pgold_nmatch[t]
                   for t in ts if pgold_nmatch[t] > 0)
-        if not np.isfinite(rec):
-            rec = 0.
     return prec, rec
 
 def evaluate_matching(disc_clsdict, gold_clsdict, corpus, minlength=3,

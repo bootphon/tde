@@ -107,8 +107,11 @@ def _match_sub(disc_clsdict, gold_clsdict, phn_corpus, names, label,
                                 pre_dispatch='n_jobs')
                       (delayed(em)(pdisc, pgold, psub)
                       for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
-    return np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
-
+    tp = np.fromiter(tp, dtype=np.double)
+    tr = np.fromiter(tr, dtype=np.double)
+    tp = aggregate(tp, 0)
+    tr = aggregate(tr, 0)
+    return tp, tr
 
 def match(disc_clsdict, gold_clsdict, phn_corpus,
           fragments_within, fragments_cross,
@@ -143,7 +146,11 @@ def _group_sub(disc_clsdict, names, label, verbose, n_jobs):
                               pre_dispatch='n_jobs')
                      (delayed(eg)(disc_clsdict.restrict(ns, True))
                       for ns in names)))
-    return np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
+    p = np.fromiter(p, dtype=np.double)
+    r = np.fromiter(r, dtype=np.double)
+    p = aggregate(p, 0)
+    r = aggregate(r, 0)
+    return p, r
 
 def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs):
     if verbose:
@@ -173,7 +180,7 @@ def _token_type_sub(clsdict, wrd_corpus, names, label, verbose, n_jobs):
                                        wrd_corpus.restrict(ns))
                                     for ns in names))
     pto, rto, pty, rty = np.array(pto), np.array(rto), np.array(pty), np.array(rty)
-
+    pto, rto, pty, rty = aggregate(pto), aggregate(rto), aggregate(pty), aggregate(rty)
     return pto, rto, pty, rty
 
 def token_type(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
@@ -234,9 +241,11 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
     # don't replace nan's by 1, but ignore them, unless all values in ned_score
     # are nan
     ned_score = np.array(ned_score)
-    ned_score = ned_score[np.logical_not(np.isnan(ned_score))]
-    if ned_score.shape[0] == 0:
-        ned_score = np.array([1.])
+    ned_score = aggregate(ned_score, 1)
+
+    cov_score = np.array(cov_score)
+    cov_score = aggregate(cov_score, 0)
+
     return np.array(ned_score), np.array(cov_score)
 
 
@@ -275,7 +284,9 @@ def _boundary_sub(disc_clsdict, corpus, names, label, verbose, n_jobs):
                               pre_dispatch='2*n_jobs') \
                     (delayed(eb)(disc, gold)
                      for disc, gold in zip(disc_bounds, gold_bounds)))
-    return np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
+    b, r = np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
+    b, r = aggregate(b), aggregate(r)
+    return b, r
 
 
 def boundary(disc_clsdict, corpus, fragments_within, fragments_cross,
@@ -296,6 +307,12 @@ def boundary(disc_clsdict, corpus, fragments_within, fragments_cross,
         fid.write(pretty_score_f(pw, rw, fw, 'boundary within-speaker',
                                          len(fragments_within),
                                          sum(map(len, fragments_within))))
+
+def aggregate(array, default=0.):
+    array = array[np.logical_not(np.isnan(array))]
+    if array.shape[0] == 0:
+        array = np.array([default])
+    return array
 
 def _load_corpus(fname):
     return load_corpus_txt(fname)
