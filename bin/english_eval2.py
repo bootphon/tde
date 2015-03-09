@@ -26,25 +26,40 @@ from tde.measures.match import eval_from_psets, make_pdisc, make_pgold, \
 from tde.measures.token_type import evaluate_token_type
 
 
-def _load_classes(fname, corpus):
-    return load_classes_txt(fname, corpus)
+def _load_classes(fname, corpus, split_mapping=None):
+    return load_classes_txt(fname, corpus, split=split_mapping)
 
 
 def load_disc(fname, corpus, split_file, truncate, verbose):
     with verb_print('  loading discovered classes',
                              verbose, True, True, True):
-        disc = _load_classes(fname, corpus)
-    split_mapping = load_split(split_file)
+        split_mapping = load_split(split_file)
+        disc, errors = _load_classes(fname, corpus, split_mapping)
+        if verbose or not truncate:
+            errors_found = len(errors) > 0
+            if len(errors) > 100:
+                print 'There were more than 100 interval errors found.'
+                print 'Printing only the first 100.'
+                print
+                errors = errors[:100]
+            for fragment in sorted(errors, key=lambda x: (x.name, x.interval.start)):
+                print '  error: {0} [{1:.3f}, {2:.3f}]'.format(
+                    fragment.name, fragment.interval.start, fragment.interval.end)
+            if not truncate and errors_found:
+                print 'There were errors in {0}. Use option -f to'\
+                    ' automatically skip invalid intervals.'.format(fname)
+                sys.exit()
+
     if truncate:
         with verb_print('  checking discovered classes and truncating'):
             disc, filename_errors, interval_errors = \
-                truncate_intervals(disc_clsdict, corpus,
-                                   split_mapping, verbose)
+                truncate_intervals(disc, corpus,
+                                   split_mapping)
     else:
         with verb_print('  checking discovered classes', verbose, True,
                                  True, True):
             filename_errors, interval_errors = \
-                check_intervals(disc, split_mapping,)
+                check_intervals(disc, split_mapping)
     if verbose or not truncate:
         filename_errors = sorted(filename_errors,
                                  key=lambda x: (x.name, x.interval.start))
@@ -61,8 +76,9 @@ def load_disc(fname, corpus, split_file, truncate, verbose):
                 print 'Printing only the first 100.'
                 print
                 interval_errors = interval_errors[:100]
-            for fragment in interval_errors:
-                print '  found: {0} [{1:.3f}, {2:.3f}]'.format(
+            for fragment in sorted(interval_errors,
+                                   key=lambda x: (x.name, x.interval.start)):
+                print '  error: {0} [{1:.3f}, {2:.3f}]'.format(
                     fragment.name,
                     fragment.interval.start, fragment.interval.end)
         if filename_error:
@@ -73,12 +89,11 @@ def load_disc(fname, corpus, split_file, truncate, verbose):
                 print 'Printing only the first 100.'
                 print
                 filename_errors = filename_errors[:100]
-            for fragment in filename_errors:
-                print '  found: {0}'.format(fragment.name)
-        if errors_found:
-            print 'There were errors in {0}'.format(fname)
-
+            for fragment in sorted(filename_errors,
+                                   key=lambda x: (x.name, x.interval.start)):
+                print '  error: {0}'.format(fragment.name)
         if not truncate and errors_found:
+            print 'There were errors in {0}. Use option -f to automatically skip invalid intervals.'.format(fname)
             sys.exit()
     return disc
 
@@ -325,7 +340,7 @@ def load_fragments_within(fname, verbose):
 def load_gold(fname, corpus, verbose):
     with verb_print('  loading gold classes',
                              verbose, True, True, True):
-        gold = _load_classes(fname, corpus)
+        gold, _ = _load_classes(fname, corpus)
     return gold
 
 if __name__ == '__main__':

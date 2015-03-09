@@ -198,7 +198,7 @@ def tokenlists_to_corpus(tokenlists):
     return Corpus(fas)
 
 
-def load_classes_txt(filename, corpus):
+def load_classes_txt(filename, corpus, split=None):
     """Load class file, i.e. the output of a detector and calculate the
     corresponding annotation according to `corpus`.
 
@@ -226,18 +226,24 @@ def load_classes_txt(filename, corpus):
     """
     raw = load_classfile(filename)  # without annotation
     # add mark annotation
-    return ClassDict(annotate_classes(raw, corpus))
+    return annotate_classes(raw, corpus, split=split)
 
 
-def annotate_classes(clsdict, corpus):
+def annotate_classes(clsdict, corpus, split=None):
     new = {}  # with annotation
+    errors = []
+    check_split = not (split is None)
     for classID, tokenlist in clsdict.iteritems():
         newtokens = []
         for token in tokenlist:
             filename = token.name
             interval = token.interval
-            annot = tuple(corpus.annotation(filename, interval))
-            newtokens.append(FragmentToken(filename, interval, annot))
-        newtokens = tuple(newtokens)
-        new[classID] = newtokens
-    return new
+            if check_split and not split.is_covered(filename, interval):
+                errors.append(token)
+            else:
+                annot = tuple(corpus.annotation(filename, interval))
+                newtokens.append(FragmentToken(filename, interval, annot))
+        if len(newtokens) > 0:
+            newtokens = tuple(newtokens)
+            new[classID] = newtokens
+    return ClassDict(new), errors
