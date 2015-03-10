@@ -106,8 +106,8 @@ def evaluate_group(disc_clsdict, verbose=False, debug=False):
     pgoldclus_nmatch = make_pgoldclus_nmatch(pgoldclus,
                                              verbose, debug)
 
-    len_disc = np.mean(len(t) for t in ts_disc)
-    len_gold = np.mean(len(t) for t in ts_gold)
+    len_disc = np.mean([len(t) for t in ts_disc])
+    len_gold = np.mean([len(t) for t in ts_gold])
 
     if len(pclus_nmatch) == 0:
         prec = 0.
