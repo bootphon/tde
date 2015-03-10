@@ -241,7 +241,13 @@ def annotate_classes(clsdict, corpus, split=None):
             if check_split and not split.is_covered(filename, interval):
                 errors.append(token)
                 try:
-                    interval = split.largest_overlap(filename, interval)
+                    finterval = split.largest_overlap(filename, interval)
+                    qstart, qend = interval
+                    fstart, fend = finterval
+                    if fstart != qstart or fstart != qend:
+                        newstart = max(fstart, qstart)
+                        newend = min(fend, qend)
+                        interval = Interval(newstart, newend)
                 except KeyError:
                     continue
                 except ValueError:
