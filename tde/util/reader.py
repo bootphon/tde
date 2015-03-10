@@ -240,9 +240,17 @@ def annotate_classes(clsdict, corpus, split=None):
             interval = token.interval
             if check_split and not split.is_covered(filename, interval):
                 errors.append(token)
-            else:
+                try:
+                    interval = split.largest_overlap(filename, interval)
+                except KeyError:
+                    continue
+                except ValueError:
+                    continue
+            try:
                 annot = tuple(corpus.annotation(filename, interval))
-                newtokens.append(FragmentToken(filename, interval, annot))
+            except:
+                continue
+            newtokens.append(FragmentToken(filename, interval, annot))
         if len(newtokens) > 0:
             newtokens = tuple(newtokens)
             new[classID] = newtokens
