@@ -525,11 +525,11 @@ def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
     nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, fragments_within, 'within',
                       verbose, n_jobs)
     with open(path.join(dest, 'nlp'), 'w') as fid:
-        fid.write(pretty_score_nlp(nc, cc, 'NLP within-speaker',
+        fid.write(pretty_score_nlp(nc, cc, 'NLP cross-speaker',
                                        len(fragments_within),
                                        sum(map(len, fragments_within))))
         fid.write('\n')
-        fid.write(pretty_score_nlp(nw, cw, 'NLP cross-speaker',
+        fid.write(pretty_score_nlp(nw, cw, 'NLP within-speaker',
                                        len(fragments_cross),
                                        sum(map(len, fragments_cross))))
 
@@ -724,8 +724,8 @@ fileID starttime endtime
     measures = set(args['measures'])
     do_all = len(measures) == 0
     if do_all or 'match' in measures:
-        match(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
-              fragments_cross, dest, verbose, n_jobs)
+        # match(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
+        #       fragments_cross, dest, verbose, n_jobs)
         match_uniform_length(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
                              fragments_cross, dest, verbose, n_jobs)
         match_weighted_length(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
@@ -733,8 +733,8 @@ fileID starttime endtime
         match_weighted(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
                        fragments_cross, dest, verbose, n_jobs)
     if do_all or 'group' in measures:
-        group(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
-              n_jobs)
+        # group(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
+        #       n_jobs)
         group_uniform_length(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
                              n_jobs)
         group_weighted_length(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
