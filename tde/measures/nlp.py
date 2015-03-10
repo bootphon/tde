@@ -122,11 +122,9 @@ def coverage(disc_clsdict, gold_clsdict):
     num = cover(disc_clsdict)
     den = cover(gold_clsdict)
     if np.isclose(den, 0.) or np.isclose(num, 0):
-        c = 0
+        c = np.nan
     else:
         c = num  / den
-    if not np.isfinite(c):
-        c = 0.
     return c
 
 
