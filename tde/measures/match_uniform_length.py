@@ -106,8 +106,8 @@ def eval_from_psets(pdisc, pgold, psubs, verbose=False, debug=False):
     psubs_nmatch = make_psubs_nmatch(psubs, verbose, debug)
     pgold_nmatch = make_pgold_nmatch(pgold, verbose, debug)
 
-    len_disc = sum(len(t) for t in ts_disc)
-    len_gold = sum(len(t) for t in ts_gold)
+    len_disc = np.mean(len(t) for t in ts_disc)
+    len_gold = np.mean(len(t) for t in ts_gold)
 
     if len(psubs_nmatch) == 0:
         prec = 0.
