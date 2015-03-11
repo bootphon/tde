@@ -579,8 +579,6 @@ def boundary(disc_clsdict, corpus, fragments_within, fragments_cross,
                                          len(fragments_within),
                                          sum(map(len, fragments_within))))
 
-<<<<<<< HEAD
-=======
 def aggregate(array, default_score=0.):
     array = np.array(array)
     array = array[np.logical_not(np.isnan(array))]
@@ -588,11 +586,6 @@ def aggregate(array, default_score=0.):
         array = np.array([default_score])
     return array
 
-def aggregate(array, default=0.):
-    array = array[np.logical_not(np.isnan(array))]
-    if array.shape[0] == 0:
-        array = np.array([default])
-    return array
 
 def praggregate(p_array, r_array, default_score=0.):
     p_array, r_array = np.array(p_array), np.array(r_array)
@@ -603,7 +596,6 @@ def praggregate(p_array, r_array, default_score=0.):
     if not np.any(index):
         p_array, r_array = np.array([default_score]), np.array([default_score])
     return p_array, r_array
->>>>>>> master
 
 def _load_corpus(fname):
     return load_corpus_txt(fname)
