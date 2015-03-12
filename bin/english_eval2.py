@@ -35,7 +35,7 @@ def load_disc(fname, corpus, split_file, truncate, verbose):
                              verbose, True, True, True):
         split_mapping = load_split(split_file)
         disc, errors = _load_classes(fname, corpus, split_mapping)
-        if verbose or not truncate:
+        if not truncate:
             errors_found = len(errors) > 0
             if len(errors) > 100:
                 print 'There were more than 100 interval errors found.'
@@ -60,7 +60,7 @@ def load_disc(fname, corpus, split_file, truncate, verbose):
                                  True, True):
             filename_errors, interval_errors = \
                 check_intervals(disc, split_mapping)
-    if verbose or not truncate:
+    if not truncate:
         filename_errors = sorted(filename_errors,
                                  key=lambda x: (x.name, x.interval.start))
         interval_errors = sorted(interval_errors,
@@ -355,7 +355,6 @@ def aggregate(array, default_score=0.):
         array = np.array([default_score])
     return array
 
-
 def praggregate(p_array, r_array, default_score=0.):
     p_array, r_array = np.array(p_array), np.array(r_array)
     p_index = np.logical_not(np.isnan(p_array))
@@ -433,7 +432,7 @@ fileID starttime endtime
         parser.add_argument('-f', '--force-truncate',
                             action='store_true',
                             dest='truncate',
-                            default=False,
+                            default=True,
                             help='force truncation of discovered fragments '
                             'outside of splits')
         parser.add_argument('-m', '--measures',
