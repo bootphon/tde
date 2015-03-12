@@ -10,7 +10,7 @@ from itertools import izip
 import numpy as np
 from joblib import Parallel, delayed
 
-VERSION = "0.1.3"
+VERSION = "0.2.1"
 
 from tde.util.reader import load_classes_txt, load_corpus_txt, load_split
 from tde.util.printing import verb_print, banner, pretty_score_f, \
@@ -35,7 +35,7 @@ def load_disc(fname, corpus, split_file, truncate, verbose):
                              verbose, True, True, True):
         split_mapping = load_split(split_file)
         disc, errors = _load_classes(fname, corpus, split_mapping)
-        if verbose or not truncate:
+        if not truncate:
             errors_found = len(errors) > 0
             if len(errors) > 100:
                 print 'There were more than 100 interval errors found.'
@@ -60,7 +60,7 @@ def load_disc(fname, corpus, split_file, truncate, verbose):
                                  True, True):
             filename_errors, interval_errors = \
                 check_intervals(disc, split_mapping)
-    if verbose or not truncate:
+    if not truncate:
         filename_errors = sorted(filename_errors,
                                  key=lambda x: (x.name, x.interval.start))
         interval_errors = sorted(interval_errors,
@@ -140,13 +140,13 @@ def match(disc_clsdict, gold_clsdict, phn_corpus,
                         fragments_within, 'within', verbose, n_jobs)
     fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'matching'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'match cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
+        fid.write(pretty_score_f(pc, rc, fc, 'match total',
+                                 len(fragments_cross),
+                                 sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
+        fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker only',
+                                 len(fragments_within),
+                                 sum(map(len, fragments_within))))
 
 def _group_sub(disc_clsdict, names, label, verbose, n_jobs):
     eg = evaluate_group
@@ -164,6 +164,7 @@ def _group_sub(disc_clsdict, names, label, verbose, n_jobs):
     p, r = praggregate(p, r)
     return p, r
 
+
 def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs):
     if verbose:
         print banner('GROUP')
@@ -173,13 +174,14 @@ def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs
     pw, rw = _group_sub(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
     fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'group'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
+        fid.write(pretty_score_f(pc, rc, fc, 'group total',
+                                 len(fragments_cross),
+                                 sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
+        fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker only',
+                                 len(fragments_within),
+                                 sum(map(len, fragments_within))))
+
 
 def _token_type_sub(clsdict, wrd_corpus, names, label, verbose, n_jobs):
     et = evaluate_token_type
@@ -196,6 +198,7 @@ def _token_type_sub(clsdict, wrd_corpus, names, label, verbose, n_jobs):
     pty, rty = praggregate(pty, rty)
 
     return pto, rto, pty, rty
+
 
 def token_type(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
                dest, verbose, n_jobs):
@@ -217,21 +220,22 @@ def token_type(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
     ftyw = np.fromiter((fscore(ptyw[i], rtyw[i]) for i in xrange(rtyw.shape[0])),
                        dtype=np.double)
     with open(path.join(dest, 'token_type'), 'w') as fid:
-        fid.write(pretty_score_f(ptoc, rtoc, ftoc, 'token cross-speaker',
+        fid.write(pretty_score_f(ptoc, rtoc, ftoc, 'token total',
                                  len(fragments_cross),
                                  sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(ptyc, rtyc, ftyc, 'type cross-speaker',
+        fid.write(pretty_score_f(ptyc, rtyc, ftyc, 'type total',
                                  len(fragments_cross),
                                  sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(ptow, rtow, ftow, 'token within-speaker',
+        fid.write(pretty_score_f(ptow, rtow, ftow, 'token within-speaker only',
                                  len(fragments_within),
                                  sum(map(len, fragments_within))))
         fid.write('\n')
-        fid.write(pretty_score_f(ptyw, rtyw, ftyw, 'type within-speaker',
+        fid.write(pretty_score_f(ptyw, rtyw, ftyw, 'type within-speaker only',
                                  len(fragments_within),
                                  sum(map(len, fragments_within))))
+
 
 def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
     # ned
@@ -255,7 +259,9 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
                                                                            False),
                                                      gold_clsdict.restrict(ns,
                                                                            False))
-                                    for ns in names)
+                                                    for ns in names)
+    # don't replace nan's by 1, but ignore them, unless all values in ned_score
+    # are nan
     ned_score, cov_score = np.array(ned_score), np.array(cov_score)
     ned_score, cov_score = aggregate(ned_score, 1), aggregate(cov_score)
     return np.array(ned_score), np.array(cov_score)
@@ -270,11 +276,11 @@ def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
     nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, fragments_within, 'within',
                       verbose, n_jobs)
     with open(path.join(dest, 'nlp'), 'w') as fid:
-        fid.write(pretty_score_nlp(nc, cc, 'NLP within-speaker',
+        fid.write(pretty_score_nlp(nc, cc, 'NLP total',
                                        len(fragments_within),
                                        sum(map(len, fragments_within))))
         fid.write('\n')
-        fid.write(pretty_score_nlp(nw, cw, 'NLP cross-speaker',
+        fid.write(pretty_score_nlp(nw, cw, 'NLP within-speaker only',
                                        len(fragments_cross),
                                        sum(map(len, fragments_cross))))
 
@@ -312,13 +318,13 @@ def boundary(disc_clsdict, corpus, fragments_within, fragments_cross,
                            'within', verbose, n_jobs)
     fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'boundary'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'boundary cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
+        fid.write(pretty_score_f(pc, rc, fc, 'boundary total',
+                                 len(fragments_cross),
+                                 sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'boundary within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
+        fid.write(pretty_score_f(pw, rw, fw, 'boundary within-speaker only',
+                                 len(fragments_within),
+                                 sum(map(len, fragments_within))))
 
 def aggregate(array, default_score=0.):
     array = np.array(array)
@@ -404,7 +410,7 @@ fileID starttime endtime
         parser.add_argument('-f', '--force-truncate',
                             action='store_true',
                             dest='truncate',
-                            default=False,
+                            default=True,
                             help='force truncation of discovered fragments '
                             'outside of splits')
         parser.add_argument('-m', '--measures',
