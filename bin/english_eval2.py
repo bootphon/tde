@@ -139,20 +139,11 @@ def match(disc_clsdict, gold_clsdict, phn_corpus,
                         fragments_within, 'within', verbose, n_jobs)
     fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'matching'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'match cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
-        fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
-
-
-        fid.write(pretty_score_f(pc, rc, fc, 'match cross-speaker',
+        fid.write(pretty_score_f(pc, rc, fc, 'match total',
                                  len(fragments_cross),
                                  sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker',
+        fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker only',
                                  len(fragments_within),
                                  sum(map(len, fragments_within))))
 
@@ -182,25 +173,11 @@ def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs
     pw, rw = _group_sub(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
     fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'group'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
-        fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
-
-
-        fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
+        fid.write(pretty_score_f(pc, rc, fc, 'group total',
                                  len(fragments_cross),
                                  sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker',
-                                 len(fragments_within),
-                                 sum(map(len, fragments_within))))
-
-
-        fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker',
+        fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker only',
                                  len(fragments_within),
                                  sum(map(len, fragments_within))))
 
@@ -242,19 +219,19 @@ def token_type(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
     ftyw = np.fromiter((fscore(ptyw[i], rtyw[i]) for i in xrange(rtyw.shape[0])),
                        dtype=np.double)
     with open(path.join(dest, 'token_type'), 'w') as fid:
-        fid.write(pretty_score_f(ptoc, rtoc, ftoc, 'token cross-speaker',
+        fid.write(pretty_score_f(ptoc, rtoc, ftoc, 'token total',
                                  len(fragments_cross),
                                  sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(ptyc, rtyc, ftyc, 'type cross-speaker',
+        fid.write(pretty_score_f(ptyc, rtyc, ftyc, 'type total',
                                  len(fragments_cross),
                                  sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(ptow, rtow, ftow, 'token within-speaker',
+        fid.write(pretty_score_f(ptow, rtow, ftow, 'token within-speaker only',
                                  len(fragments_within),
                                  sum(map(len, fragments_within))))
         fid.write('\n')
-        fid.write(pretty_score_f(ptyw, rtyw, ftyw, 'type within-speaker',
+        fid.write(pretty_score_f(ptyw, rtyw, ftyw, 'type within-speaker only',
                                  len(fragments_within),
                                  sum(map(len, fragments_within))))
 
@@ -298,11 +275,11 @@ def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
     nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, fragments_within, 'within',
                       verbose, n_jobs)
     with open(path.join(dest, 'nlp'), 'w') as fid:
-        fid.write(pretty_score_nlp(nc, cc, 'NLP cross-speaker',
+        fid.write(pretty_score_nlp(nc, cc, 'NLP total',
                                        len(fragments_within),
                                        sum(map(len, fragments_within))))
         fid.write('\n')
-        fid.write(pretty_score_nlp(nw, cw, 'NLP within-speaker',
+        fid.write(pretty_score_nlp(nw, cw, 'NLP within-speaker only',
                                        len(fragments_cross),
                                        sum(map(len, fragments_cross))))
 
@@ -340,13 +317,13 @@ def boundary(disc_clsdict, corpus, fragments_within, fragments_cross,
                            'within', verbose, n_jobs)
     fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'boundary'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'boundary cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
+        fid.write(pretty_score_f(pc, rc, fc, 'boundary total',
+                                 len(fragments_cross),
+                                 sum(map(len, fragments_cross))))
         fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'boundary within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
+        fid.write(pretty_score_f(pw, rw, fw, 'boundary within-speaker only',
+                                 len(fragments_within),
+                                 sum(map(len, fragments_within))))
 
 def aggregate(array, default_score=0.):
     array = np.array(array)
