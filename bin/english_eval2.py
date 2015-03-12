@@ -148,47 +148,6 @@ def match(disc_clsdict, gold_clsdict, phn_corpus,
                                          sum(map(len, fragments_within))))
 
 
-def _match_sub_uniform_length(disc_clsdict, gold_clsdict, phn_corpus, names, label,
-                              verbose, n_jobs):
-    import tde.measures.match_uniform_length
-    em = tde.measures.match_uniform_length.eval_from_psets
-    if verbose:
-        print '  matching ({2}): subsampled {0} files in {1} sets'\
-            .format(sum(map(len, names)), len(names), label)
-    with verb_print('  matching ({0}): prepping psets'.format(label),
-                             verbose, True, True, True):
-        pdiscs = [make_pdisc(disc_clsdict.restrict(fs, True),
-                             False, False)
-                  for fs in names]
-        pgolds = [make_pgold(gold_clsdict.restrict(fs, True),
-                             False, False)
-                  for fs in names]
-        psubs = [make_psubs(disc_clsdict.restrict(fs, True),
-                            phn_corpus, 3, 20, False, False)
-                 for fs in names]
-    with verb_print('  matching ({0}): calculating scores'
-                             .format(label), verbose, False, True, False):
-        tp, tr = izip(*Parallel(n_jobs=n_jobs,
-                                verbose=5 if verbose else 0,
-                                pre_dispatch='n_jobs')
-                      (delayed(em)(pdisc, pgold, psub)
-                      for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
-    return np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
-
-
-def match_uniform_length(disc_clsdict, gold_clsdict, phn_corpus,
-                         fragments_within, fragments_cross,
-                         dest, verbose, n_jobs):
-    if verbose:
-        print banner('MATCHING UNIFORM LENGTH')
-    pc, rc = _match_sub_uniform_length(disc_clsdict, gold_clsdict, phn_corpus,
-                                       fragments_cross, 'cross', verbose, n_jobs)
-    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
-
-    pw, rw = _match_sub_uniform_length(disc_clsdict, gold_clsdict, phn_corpus,
-                                       fragments_within, 'within', verbose, n_jobs)
-    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
-    with open(path.join(dest, 'matching_uniform_length'), 'w') as fid:
         fid.write(pretty_score_f(pc, rc, fc, 'match cross-speaker',
                                  len(fragments_cross),
                                  sum(map(len, fragments_cross))))
@@ -196,107 +155,6 @@ def match_uniform_length(disc_clsdict, gold_clsdict, phn_corpus,
         fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker',
                                  len(fragments_within),
                                  sum(map(len, fragments_within))))
-
-
-def _match_sub_weighted_length(disc_clsdict, gold_clsdict, phn_corpus, names, label,
-                              verbose, n_jobs):
-    import tde.measures.match_weighted_length
-    em = tde.measures.match_weighted_length.eval_from_psets
-    if verbose:
-        print '  matching ({2}): subsampled {0} files in {1} sets'\
-            .format(sum(map(len, names)), len(names), label)
-    with verb_print('  matching ({0}): prepping psets'.format(label),
-                             verbose, True, True, True):
-        pdiscs = [make_pdisc(disc_clsdict.restrict(fs, True),
-                             False, False)
-                  for fs in names]
-        pgolds = [make_pgold(gold_clsdict.restrict(fs, True),
-                             False, False)
-                  for fs in names]
-        psubs = [make_psubs(disc_clsdict.restrict(fs, True),
-                            phn_corpus, 3, 20, False, False)
-                 for fs in names]
-    with verb_print('  matching ({0}): calculating scores'
-                             .format(label), verbose, False, True, False):
-        tp, tr = izip(*Parallel(n_jobs=n_jobs,
-                                verbose=5 if verbose else 0,
-                                pre_dispatch='n_jobs')
-                      (delayed(em)(pdisc, pgold, psub)
-                      for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
-    return np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
-
-
-def match_weighted_length(disc_clsdict, gold_clsdict, phn_corpus,
-                          fragments_within, fragments_cross,
-                          dest, verbose, n_jobs):
-    if verbose:
-        print banner('MATCHING WEIGHTED LENGTH')
-    pc, rc = _match_sub_weighted_length(disc_clsdict, gold_clsdict, phn_corpus,
-                                       fragments_cross, 'cross', verbose, n_jobs)
-    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
-
-    pw, rw = _match_sub_weighted_length(disc_clsdict, gold_clsdict, phn_corpus,
-                                       fragments_within, 'within', verbose, n_jobs)
-    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
-    with open(path.join(dest, 'matching_weighted_length'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'match cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
-        fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
-
-
-def _match_sub_weighted(disc_clsdict, gold_clsdict, phn_corpus, names, label,
-                        verbose, n_jobs):
-    import tde.measures.match_weighted
-    em = tde.measures.match_weighted.eval_from_psets
-    if verbose:
-        print '  matching ({2}): subsampled {0} files in {1} sets'\
-            .format(sum(map(len, names)), len(names), label)
-    with verb_print('  matching ({0}): prepping psets'.format(label),
-                             verbose, True, True, True):
-        pdiscs = [make_pdisc(disc_clsdict.restrict(fs, True),
-                             False, False)
-                  for fs in names]
-        pgolds = [make_pgold(gold_clsdict.restrict(fs, True),
-                             False, False)
-                  for fs in names]
-        psubs = [make_psubs(disc_clsdict.restrict(fs, True),
-                            phn_corpus, 3, 20, False, False)
-                 for fs in names]
-    with verb_print('  matching ({0}): calculating scores'
-                             .format(label), verbose, False, True, False):
-        tp, tr = izip(*Parallel(n_jobs=n_jobs,
-                                verbose=5 if verbose else 0,
-                                pre_dispatch='n_jobs')
-                      (delayed(em)(pdisc, pgold, psub)
-                      for pdisc, pgold, psub in zip(pdiscs, pgolds, psubs)))
-    return np.fromiter(tp, dtype=np.double), np.fromiter(tr, dtype=np.double)
-
-
-def match_weighted(disc_clsdict, gold_clsdict, phn_corpus,
-                   fragments_within, fragments_cross,
-                   dest, verbose, n_jobs):
-    if verbose:
-        print banner('MATCHING WEIGHTED')
-    pc, rc = _match_sub_weighted(disc_clsdict, gold_clsdict, phn_corpus,
-                                 fragments_cross, 'cross', verbose, n_jobs)
-    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
-
-    pw, rw = _match_sub_weighted(disc_clsdict, gold_clsdict, phn_corpus,
-                                 fragments_within, 'within', verbose, n_jobs)
-    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
-    with open(path.join(dest, 'matching_weighted'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'match cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
-        fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'match within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
-
 
 def _group_sub(disc_clsdict, names, label, verbose, n_jobs):
     eg = evaluate_group
@@ -324,7 +182,6 @@ def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs
     pw, rw = _group_sub(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
     fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
     with open(path.join(dest, 'group'), 'w') as fid:
-        print pc, rc, fc
         fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
                                          len(fragments_cross),
                                          sum(map(len, fragments_cross))))
@@ -334,65 +191,6 @@ def group(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs
                                          sum(map(len, fragments_within))))
 
 
-def _group_sub_uniform_length(disc_clsdict, names, label, verbose, n_jobs):
-    import tde.measures.group_uniform_length
-    eg = tde.measures.group_uniform_length.evaluate_group
-    if verbose:
-        print '  group ({2}): subsampled {0} files in {1} sets'\
-            .format(sum(map(len, names)), len(names), label)
-    with verb_print('  group ({0}): calculating scores'.format(label),
-                             verbose, False, True, False):
-        p, r = izip(*(Parallel(n_jobs=n_jobs,
-                              verbose=5 if verbose else 0,
-                              pre_dispatch='n_jobs')
-                     (delayed(eg)(disc_clsdict.restrict(ns, True))
-                      for ns in names)))
-    return np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
-
-
-def group_uniform_length(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs):
-    if verbose:
-        print banner('GROUP UNIFORM LENGTH')
-    pc, rc = _group_sub_uniform_length(disc_clsdict, fragments_cross, 'cross', verbose, n_jobs)
-    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
-
-    pw, rw = _group_sub_uniform_length(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
-    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
-    with open(path.join(dest, 'group_uniform_length'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
-                                         len(fragments_cross),
-                                         sum(map(len, fragments_cross))))
-        fid.write('\n')
-        fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker',
-                                         len(fragments_within),
-                                         sum(map(len, fragments_within))))
-
-
-def _group_sub_weighted_length(disc_clsdict, names, label, verbose, n_jobs):
-    import tde.measures.group_weighted_length
-    eg = tde.measures.group_weighted_length.evaluate_group
-    if verbose:
-        print '  group ({2}): subsampled {0} files in {1} sets'\
-            .format(sum(map(len, names)), len(names), label)
-    with verb_print('  group ({0}): calculating scores'.format(label),
-                             verbose, False, True, False):
-        p, r = izip(*(Parallel(n_jobs=n_jobs,
-                              verbose=5 if verbose else 0,
-                              pre_dispatch='n_jobs')
-                     (delayed(eg)(disc_clsdict.restrict(ns, True))
-                      for ns in names)))
-    return np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
-
-
-def group_weighted_length(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs):
-    if verbose:
-        print banner('GROUP WEIGHTED LENGTH')
-    pc, rc = _group_sub_weighted_length(disc_clsdict, fragments_cross, 'cross', verbose, n_jobs)
-    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
-
-    pw, rw = _group_sub_weighted_length(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
-    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
-    with open(path.join(dest, 'group_weighted_length'), 'w') as fid:
         fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
                                  len(fragments_cross),
                                  sum(map(len, fragments_cross))))
@@ -402,35 +200,6 @@ def group_weighted_length(disc_clsdict, fragments_within, fragments_cross, dest,
                                  sum(map(len, fragments_within))))
 
 
-def _group_sub_weighted(disc_clsdict, names, label, verbose, n_jobs):
-    import tde.measures.group_weighted
-    eg = tde.measures.group_weighted.evaluate_group
-    if verbose:
-        print '  group ({2}): subsampled {0} files in {1} sets'\
-            .format(sum(map(len, names)), len(names), label)
-    with verb_print('  group ({0}): calculating scores'.format(label),
-                             verbose, False, True, False):
-        p, r = izip(*(Parallel(n_jobs=n_jobs,
-                              verbose=5 if verbose else 0,
-                              pre_dispatch='n_jobs')
-                     (delayed(eg)(disc_clsdict.restrict(ns, True))
-                      for ns in names)))
-    return np.fromiter(p, dtype=np.double), np.fromiter(r, dtype=np.double)
-
-
-def group_weighted(disc_clsdict, fragments_within, fragments_cross, dest, verbose, n_jobs):
-    if verbose:
-        print banner('GROUP WEIGHTED')
-    pc, rc = _group_sub_weighted(disc_clsdict, fragments_cross, 'cross', verbose, n_jobs)
-    fc = np.fromiter((fscore(pc[i], rc[i]) for i in xrange(pc.shape[0])), dtype=np.double)
-
-    pw, rw = _group_sub_weighted(disc_clsdict, fragments_within, 'within', verbose, n_jobs)
-    fw = np.fromiter((fscore(pw[i], rw[i]) for i in xrange(pw.shape[0])), dtype=np.double)
-    with open(path.join(dest, 'group_weighted'), 'w') as fid:
-        fid.write(pretty_score_f(pc, rc, fc, 'group cross-speaker',
-                                 len(fragments_cross),
-                                 sum(map(len, fragments_cross))))
-        fid.write('\n')
         fid.write(pretty_score_f(pw, rw, fw, 'group within-speaker',
                                  len(fragments_within),
                                  sum(map(len, fragments_within))))
@@ -747,23 +516,11 @@ fileID starttime endtime
     measures = set(args['measures'])
     do_all = len(measures) == 0
     if do_all or 'match' in measures:
-        # match(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
-        #       fragments_cross, dest, verbose, n_jobs)
-        match_uniform_length(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
-                             fragments_cross, dest, verbose, n_jobs)
-        match_weighted_length(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
-                              fragments_cross, dest, verbose, n_jobs)
-        match_weighted(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
-                       fragments_cross, dest, verbose, n_jobs)
+        match(disc_clsdict, gold_clsdict, phn_corpus, fragments_within,
+              fragments_cross, dest, verbose, n_jobs)
     if do_all or 'group' in measures:
-        # group(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
-        #       n_jobs)
-        group_uniform_length(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
-                             n_jobs)
-        group_weighted_length(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
-                              n_jobs)
-        group_weighted(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
-                       n_jobs)
+        group(disc_clsdict, fragments_within, fragments_cross, dest, verbose,
+              n_jobs)
     if do_all or 'token/type' in measures:
         token_type(disc_clsdict, wrd_corpus, fragments_within, fragments_cross,
                    dest, verbose, n_jobs)

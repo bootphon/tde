@@ -36,7 +36,7 @@ def make_pclus(disc_clsdict, verbose, debug):
 
 def make_pgoldclus(disc_clsdict, verbose, debug):
     with verb_print('constructing pgoldclus', verbose, True, True):
-        pgoldclus = Pgoldclus(disc_clsdict)
+        pgoldclus = list(Pgoldclus(disc_clsdict))
     if debug:
         pgoldclus = list(pgoldclus)
         print banner('PGOLDCLUS ({0})'.format(len(pgoldclus)))
@@ -92,24 +92,31 @@ def make_pgoldclus_nmatch(pgoldclus, verbose, debug):
 
 def evaluate_group(disc_clsdict, verbose=False, debug=False):
     pclus = make_pclus(disc_clsdict, verbose, debug)
-    ts = make_typeset(pclus, verbose, debug)
-    ws = make_weights(pclus, verbose, debug)
+    pgoldclus = make_pgoldclus(disc_clsdict, verbose, debug)
+
+    ts_disc = make_typeset(pclus, verbose, debug)
+    ts_gold = make_typeset(pgoldclus, verbose, debug)
 
     pclus_pgoldclus_nmatch = make_pclus_pgoldclus_nmatch(pclus,
-                                                         Pgoldclus(disc_clsdict),
+                                                         pgoldclus,
                                                          verbose, debug)
     pclus_nmatch = make_pclus_nmatch(pclus, verbose, debug)
-    pgoldclus_nmatch = make_pgoldclus_nmatch(Pgoldclus(disc_clsdict),
+    pgoldclus_nmatch = make_pgoldclus_nmatch(pgoldclus,
                                              verbose, debug)
+
+    ws_disc = make_weights(pclus, verbose, debug)
+    ws_gold = make_weights(pgoldclus, verbose, debug)
+
     if len(pclus_nmatch) == 0:
         prec = np.nan
     else:
-        prec = sum(ws[t] * pclus_pgoldclus_nmatch[t] / pclus_nmatch[t]
-                   for t in ts if pclus_nmatch[t] > 0)
+        prec = sum(ws_disc[t] * pclus_pgoldclus_nmatch[t] / pclus_nmatch[t]
+                   for t in ts_disc if pclus_nmatch[t] > 0)
 
     if len(pgoldclus_nmatch) == 0:
         rec = np.nan
     else:
-        rec = sum(ws[t] * pclus_pgoldclus_nmatch[t] / pgoldclus_nmatch[t]
-                  for t in ts if pgoldclus_nmatch[t] > 0)
+        rec = sum(ws_gold[t] * pclus_pgoldclus_nmatch[t] / pgoldclus_nmatch[t]
+                  for t in ts_gold if pgoldclus_nmatch[t] > 0)
+
     return prec, rec
