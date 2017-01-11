@@ -64,8 +64,8 @@ setup(
     ext_modules=extensions,
     include_dirs=[numpy.get_include(),
                   os.path.join(numpy.get_include(), 'numpy')],
-    executables = [Executable('bin/sample_eval2.py'),
+    executables = [Executable('bin/french_eval2.py'),
                    Executable('bin/english_eval2.py'),
-                   Executable('bin/xitsonga_eval2.py')],
+                   Executable('bin/mandarin_eval2.py')],
     options={'build_exe': build_exe_options},
 )

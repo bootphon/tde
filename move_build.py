@@ -20,7 +20,7 @@ for the evaluation of the english dataset there.
 """)
         parser.add_argument('corpus', metavar='CORPUS',
                             nargs=1,
-                            choices=['sample', 'english', 'xitsonga'],
+                            choices=['french', 'english', 'mandarin'],
                             help='build code for which corpus')
         parser.add_argument('output', metavar='OUTDIR',
                             nargs=1,
@@ -35,14 +35,13 @@ for the evaluation of the english dataset there.
 
     shutil.copytree('build/exe.linux-x86_64-2.7', path.join(output, 'resources/'))
     shutil.copytree('bin/resources', path.join(output, 'resources/resources'))
-    if corpus == 'sample':
-        shutil.copy('sample_eval2', path.join(output, 'sample_eval2'))
-        shutil.copy('bin/resources/sample.classes.example',
-                    path.join(output, 'sample.classes.example'))
-        os.chmod(path.join(output, 'sample_eval2'), stat.S_IRUSR | stat.S_IXUSR)
+    if corpus == 'french':
+        shutil.copy('french_eval2', path.join(output, 'french_eval2'))
+        shutil.copy('bin/resources/french.classes', path.join(output, 'french.classes'))
+        os.chmod(path.join(output, 'french_eval2'), stat.S_IRUSR | stat.S_IXUSR)
     elif corpus == 'english':
         shutil.copy('english_eval2', path.join(output, 'english_eval2'))
         os.chmod(path.join(output, 'english_eval2'), stat.S_IRUSR | stat.S_IXUSR)
     else:
-        shutil.copy('xitsonga_eval2', path.join(output, 'xitsonga_eval2'))
-        os.chmod(path.join(output, 'xitsonga_eval2'), stat.S_IRUSR | stat.S_IXUSR)
+        shutil.copy('mandarin_eval2', path.join(output, 'mandarin_eval2'))
+        os.chmod(path.join(output, 'mandarin_eval2'), stat.S_IRUSR | stat.S_IXUSR)

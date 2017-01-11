@@ -310,7 +310,7 @@ fileID starttime endtime
 ...
 """)
         parser.add_argument('dataset_id',
-                            choices=['sample', 'english'],
+                            choices=['french', 'english', 'mandarin'],
                             help='identifier for the dataset used')
         parser.add_argument('disc_clsfile', metavar='DISCCLSFILE',
                             nargs=1,
@@ -341,7 +341,7 @@ fileID starttime endtime
     disc_clsfile = args['disc_clsfile'][0]
     dest = args['outdir'][0]
 
-    valid_ids = ['sample', 'english']
+    valid_ids = ['french', 'english', 'mandarin']
 
     if getattr(sys, 'frozen', False):
         # frozen
@@ -353,18 +353,24 @@ fileID starttime endtime
         resource_dir = path.join(rdir, 'resources')
 
 
-    if dataset_id == 'sample':
-        names_cross_file  = path.join(resource_dir, 'sample.names.cross')
-        names_within_file = path.join(resource_dir, 'sample.names.within')
-        gold_clsfile      = path.join(resource_dir, 'sample.classes')
-        phn_corpus_file   = path.join(resource_dir, 'sample.phn')
-        wrd_corpus_file   = path.join(resource_dir, 'sample.wrd')
+    if dataset_id == 'french':
+        names_cross_file  = path.join(resource_dir, 'french.names.cross')
+        names_within_file = path.join(resource_dir, 'french.names.within')
+        gold_clsfile      = path.join(resource_dir, 'french.classes')
+        phn_corpus_file   = path.join(resource_dir, 'french.phn')
+        wrd_corpus_file   = path.join(resource_dir, 'french.wrd')
     elif dataset_id == 'english':
         names_cross_file  = path.join(resource_dir, 'english.names.cross')
         names_within_file = path.join(resource_dir, 'english.names.within')
         gold_clsfile      = path.join(resource_dir, 'english.classes')
         phn_corpus_file   = path.join(resource_dir, 'english.phn')
         wrd_corpus_file   = path.join(resource_dir, 'english.wrd')
+    elif dataset_id == 'mandarin':
+        names_cross_file  = path.join(resource_dir, 'mandarin.names.cross')
+        names_within_file = path.join(resource_dir, 'mandarin.names.within')
+        gold_clsfile      = path.join(resource_dir, 'mandarin.classes')
+        phn_corpus_file   = path.join(resource_dir, 'mandarin.phn')
+        wrd_corpus_file   = path.join(resource_dir, 'mandarin.wrd')
     else:
         print 'unknown datasetID: {0}. datasetID must be one of [{1}]'.format(
             dataset_id, ','.join(valid_ids))

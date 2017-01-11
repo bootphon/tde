@@ -76,6 +76,12 @@ def grouper(n, iterable, padvalue=None):
 def fname2speaker(corpus_type):
     if corpus_type == 'buckeye':
         return lambda x: path.splitext(path.basename(x))[0][:3]
+    elif corpus_type == 'mandarin':
+        return lambda x: path.splitext(path.basename(x))[0][:3]
+    elif corpus_type == 'english':
+        return lambda x: path.splitext(path.basename(x))[0]
+    elif corpus_type == 'french':
+        return lambda x: path.splitext(path.basename(x))[0][:5]
     elif corpus_type == 'xitsonga':
         return lambda x: path.splitext(path.basename(x))[0].split('_')[2]
     else:
