@@ -1,3 +1,5 @@
+joblib
+numpy
 labaster=0.7.9=py27_0
 babel=2.3.4=py27_0
 cython=0.25.2=py27_0

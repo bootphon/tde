@@ -171,7 +171,7 @@ class Interval(object):
                              ' on both intervals is the same.')
 
         over = self.overlap(other)
-        if np.isclose(over, 0.0):
+        if over < 0.00000001: #np.isclose(over, 0.0):
             return False
         if over > self.minimum_overlap:
             return True
@@ -226,7 +226,7 @@ class Interval(object):
         bool
 
         """
-        return np.isclose(self.end, other.start)
+        return abs(self.end - other.start) < 1e-05  # np.isclose(self.end, other.start)
 
     def is_right_adjacent_to(self, other):
         """
@@ -241,7 +241,7 @@ class Interval(object):
         bool
 
         """
-        return np.isclose(other.end, self.start)
+        return abs(other.end - self.start) < 1e-05  # np.isclose(other.end, self.start)
 
 
 
