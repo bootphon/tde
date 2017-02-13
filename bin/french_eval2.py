@@ -277,12 +277,12 @@ def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
                       verbose, n_jobs)
     with open(path.join(dest, 'nlp'), 'w') as fid:
         fid.write(pretty_score_nlp(nc, cc, 'NLP total',
-                                       len(fragments_within),
-                                       sum(map(len, fragments_within))))
-        fid.write('\n')
-        fid.write(pretty_score_nlp(nw, cw, 'NLP within-speaker only',
                                        len(fragments_cross),
                                        sum(map(len, fragments_cross))))
+        fid.write('\n')
+        fid.write(pretty_score_nlp(nw, cw, 'NLP within-speaker only',
+                                       len(fragments_within),
+                                       sum(map(len, fragments_within))))
 
 
 def _boundary_sub(disc_clsdict, corpus, names, label, verbose, n_jobs):
