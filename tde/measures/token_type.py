@@ -23,7 +23,10 @@ def evaluate_token_type(disc_clsdict, wrd_corpus,
             disc_end = disc_fragment.interval.end
             wrd_tokens = wrd_corpus.tokens(disc_fragment.name,
                                            disc_fragment.interval)
-            types_seen.add(tuple(f.mark for f in wrd_tokens))
+            try: # if it is type none
+                types_seen.add(tuple(f.mark for f in wrd_tokens))
+            except:
+                continue 
             if len(wrd_tokens) != 1:
                 continue
             goldtok = wrd_tokens[0]

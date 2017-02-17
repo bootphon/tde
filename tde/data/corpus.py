@@ -155,14 +155,18 @@ class Corpus(collections.Mapping):
             try:
                 fa_for_filename = self[name]
             except KeyError:
-                raise KeyError('no such name: {0}'.format(name))
+                return None
+                #raise KeyError('no such name: {0}'.format(name))
+            
             dummy_token = FragmentToken(name, interval, None)
             try:
                 fa = fa_for_filename.find_le(dummy_token)
-            except ValueError:
-                raise ValueError('interval not found: {0}'.format(str(interval)))
+            except ValueError: 
+                return None
+                ##raise ValueError('interval not found: {0}'.format(str(interval)))
             if (fa.interval.overlap(interval)) > 0:
                 self._cache[key] = fa.tokens_at_interval(interval)
             else:
-                raise ValueError('interval not found: {0}'.format(str(interval)))
+                return None
+                #raise ValueError('interval not found: {0}'.format(str(interval)))
         return self._cache[key]

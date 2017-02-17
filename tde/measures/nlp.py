@@ -7,7 +7,6 @@ import numpy as np
 from tde.substrings.levenshtein import distance
 from tde.data.interval import Interval
 
-
 def NED(clsdict):
     neds = np.fromiter((ned(f1.mark, f2.mark)
                         for f1, f2 in clsdict.iter_pairs(within=True,
@@ -18,7 +17,6 @@ def NED(clsdict):
     else:
         r = neds.mean()
     return r
-
 
 class Node(object):
     def __init__(self, value):
@@ -123,13 +121,12 @@ def coverage(disc_clsdict, gold_clsdict):
     """
     num = cover(disc_clsdict)
     den = cover(gold_clsdict)
-
-    # np.isclose(X,0) is true for X=0.00000001, this was one of the bottlenecks of this module
-    if den < 1e-05  and num < 1e-05:  # same that np.isclose(den,0) ...
+    if den < 0.00000001 and num < 0.00000001: # same that np.isclose(den,0) ... 
         c = np.nan
     else:
         c = num/den
     return c
+
 
 def ued(s1, s2):
     """Unnormalized edit distance.
