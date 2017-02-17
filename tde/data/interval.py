@@ -226,7 +226,7 @@ class Interval(object):
         bool
 
         """
-        return abs(self.end - other.start) < 1e-05  # np.isclose(self.end, other.start)
+        return  abs(self.end - other.start) < 1e-05  #  np.isclose(self.end, other.start)
 
     def is_right_adjacent_to(self, other):
         """

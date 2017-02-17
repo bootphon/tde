@@ -46,17 +46,24 @@ class SegmentAnnotation(collections.Sequence):
         If tokens are not contiguous or don't all have the same name.
 
     """
-    def __init__(self, name, tokens):
+    def __init__(self, name, tokens, _from_restrict=False):
+        '''name, tokens, _from_restrict=False ... _from_restrict is True if
+        it is called from inside the class
+        '''
         self.name = name
         self.tokens = SortedList(tokens, key=cmp_to_key(token_cmp))
         if len(self.tokens) == 0:
-            self.interval = None
+            _interval = None
         else:
-            self.interval = Interval(self.tokens[0].interval.start,
+            _interval = Interval(self.tokens[0].interval.start,
                                      self.tokens[-1].interval.end)
-        if not all(t1.interval.end == t2.interval.start
-                   for t1, t2 in zip(self.tokens[:-1], self.tokens[1:])):
+        
+        _continous = all(t1.interval.end == t2.interval.start 
+                for t1, t2 in zip(self.tokens[:-1], self.tokens[1:]))
+        if not _continous and not _from_restrict:
             raise ValueError('Non-contiguous tokens.')
+        
+        self.interval = _interval
 
     def __len__(self):
         return len(self.tokens)
@@ -103,9 +110,11 @@ class SegmentAnnotation(collections.Sequence):
             New SegmentAnnotation object.
 
         """
+        # _from_retrict
         return SegmentAnnotation(self.name,
-                                 [f for f in self.tokens
-                                  if interval_db.is_covered(f.name, f.interval)])
+                [f for f in self.tokens
+                if interval_db.is_covered(f.name, f.interval)], 
+                _from_restrict=True)
 
     def annotation_at_interval(self, interval):
         """
