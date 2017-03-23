@@ -42,13 +42,15 @@ def pretty_score_f(ps, rs, fs, label, nfolds, nsamples):
     return r
 
 
-def pretty_score_nlp(ned_score, coverage_score, label, nfolds, nsamples):
-    r = '{sep}\n'.format(sep=37*'-')
-    r += '{label}\n#folds:    {nfolds}\n#samples:  {nsamples}\n'.format(
-        label=label, nfolds=nfolds, nsamples=nsamples)
-    r += '{sep}\n'.format(sep=37*'-')
-    r += '{score:9s}  {mean:5s}  {std:5s}  {min:5s}  {max:5s}\n'.format(
-        score="measure", mean="mean", std="std", min="min", max="max")
+def pretty_score_nlp(ned_score, coverage_score, label, nfolds, nsamples, nclusters, npairs):
+    r = '-------------------------------------\n'
+    r += '{label}\n'.format(label=label) 
+    r += '#cluster:  {}\n'.format(nclusters)
+    r += '#pairs:    {}\n'.format(int(npairs))
+    r += '#folds:    {nfolds}\n'.format(nfolds=nfolds)
+    r += '#samples:  {nsamples}\n'.format(nsamples=nsamples)
+    r += '-------------------------------------\n'
+    r += ' measure    mean   std    min    max \n'
     r += '---------  -----  -----  -----  -----\n'
     r += '{score:9s}  {mean:.3f}  {std:.3f}  {min:.3f}  {max:.3f}\n'.format(
         score="NED", mean=ned_score.mean(), std=ned_score.std(),
@@ -56,7 +58,7 @@ def pretty_score_nlp(ned_score, coverage_score, label, nfolds, nsamples):
     r += '{score:9s}  {mean:.3f}  {std:.3f}  {min:.3f}  {max:.3f}\n'.format(
         score="coverage", mean=coverage_score.mean(), std=coverage_score.std(),
         min=coverage_score.min(), max=coverage_score.max())
-    r += '{sep}\n'.format(sep=37*'-')
+    r += '-------------------------------------\n' 
     return r
 
 

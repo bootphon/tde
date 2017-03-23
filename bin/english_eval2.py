@@ -5,18 +5,19 @@ from __future__ import division
 import os
 import os.path as path
 import sys
+import math
 from itertools import izip
 
 import numpy as np
 from joblib import Parallel, delayed
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 from tde.util.reader import load_classes_txt, load_corpus_txt, load_split
 from tde.util.printing import verb_print, banner, pretty_score_f, \
     pretty_score_nlp
 from tde.util.splits import truncate_intervals, check_intervals
-from tde.util.functions import fscore
+from tde.util.functions import fscore, nCr
 
 from tde.measures.nlp import NED, coverage
 from tde.measures.group import evaluate_group
@@ -24,6 +25,24 @@ from tde.measures.boundaries import Boundaries, eval_from_bounds
 from tde.measures.match import eval_from_psets, make_pdisc, make_pgold, \
     make_psubs
 from tde.measures.token_type import evaluate_token_type
+
+
+# get the name of the corpus from the environmental variable CORPUS
+# that can be set on the 'config' file in the root ../scripts??
+# and it's activated with the bash command:
+#
+#   $ . config
+#
+# or
+#
+#   $ source config
+#
+
+try:
+    CORPUS = os.environ['CORPUS']
+except:
+    CORPUS = 'english'
+    #raise ValueError('CORPUS environmental variable not set bash')
 
 
 def _load_classes(fname, corpus, split_mapping=None):
@@ -244,45 +263,58 @@ def _nlp_sub(disc_clsdict, gold_clsdict, names, label, verbose, n_jobs):
     if verbose:
         print '  nlp ({2}): subsampled {0} files in {1} sets'\
             .format(sum(map(len, names)), len(names), label)
-    with verb_print('  nlp ({0}): calculating scores'
-                             .format(label), verbose, False, True, False):
-        ned_score = Parallel(n_jobs=n_jobs,
-                             verbose=5 if verbose else 0,
-                             pre_dispatch='n_jobs')(delayed(ned)\
-                                                    (disc_clsdict.restrict(ns,
-                                                                           True))
-                                                    for ns in names)
-        cov_score = Parallel(n_jobs=n_jobs,
-                             verbose=5 if verbose else 0,
-                             pre_dispatch='n_jobs')(delayed(cov)\
-                                                    (disc_clsdict.restrict(ns,
-                                                                           False),
-                                                     gold_clsdict.restrict(ns,
-                                                                           False))
-                                                    for ns in names)
+    with verb_print('  nlp ({0}): calculating scores' .format(label), verbose, False, True, False):
+
+        if n_jobs>1:
+            ned_score = Parallel(n_jobs=n_jobs, verbose=5 if verbose else 0,
+                          pre_dispatch='n_jobs')(delayed(ned)(disc_clsdict.restrict(ns, True))
+                          for ns in names)
+            cov_score = Parallel(n_jobs=n_jobs, verbose=5 if verbose else 0,
+                          pre_dispatch='n_jobs')(delayed(cov)(disc_clsdict.restrict(ns, False),
+                          gold_clsdict.restrict(ns, False)) for ns in names)
+        else:
+            ned_score = list(); cov_score = list() 
+            for ns in names:
+               ned_score_ = ned(disc_clsdict.restrict(ns, True))
+               cov_score_ = cov(disc_clsdict.restrict(ns, False), gold_clsdict.restrict(ns, False))
+               ned_score.append(ned_score_)
+               cov_score.append(cov_score_)
+
+ 
     # don't replace nan's by 1, but ignore them, unless all values in ned_score
     # are nan
     ned_score, cov_score = np.array(ned_score), np.array(cov_score)
-    ned_score, cov_score = aggregate(ned_score, 1), aggregate(cov_score)
+    ned_score, cov_score = aggregate(ned_score, default_score=1), \
+                           aggregate(cov_score, default_score=0)
     return np.array(ned_score), np.array(cov_score)
 
 
 def nlp(disc_clsdict, gold_clsdict, fragments_within, fragments_cross,
         dest, verbose, n_jobs):
+
     if verbose:
         print banner('NLP')
+   
     nc, cc = _nlp_sub(disc_clsdict, gold_clsdict, fragments_cross, 'cross',
                       verbose, n_jobs)
     nw, cw = _nlp_sub(disc_clsdict, gold_clsdict, fragments_within, 'within',
                       verbose, n_jobs)
+  
+
+    # calculating the pairs/clusters found in the discovery algoritms, 
+    # it's stored on the 'nlp' output file, used to compare diff algoritms
+    nclust = len(disc_clsdict.items())    
+    npairs = sum([nCr(len(v[1]), 2) for v in disc_clsdict.items()])
+
     with open(path.join(dest, 'nlp'), 'w') as fid:
         fid.write(pretty_score_nlp(nc, cc, 'NLP total',
-                                       len(fragments_cross),
-                                       sum(map(len, fragments_cross))))
+                     len(fragments_cross), sum(map(len, fragments_cross)), 
+                     nclust, npairs))
         fid.write('\n')
+
         fid.write(pretty_score_nlp(nw, cw, 'NLP within-speaker only',
-                                       len(fragments_within),
-                                       sum(map(len, fragments_within))))
+                     len(fragments_within), sum(map(len, fragments_within)), 
+                     nclust, npairs))
 
 
 def _boundary_sub(disc_clsdict, corpus, names, label, verbose, n_jobs):
@@ -376,18 +408,19 @@ def load_gold(fname, corpus, verbose):
         gold, _ = _load_classes(fname, corpus)
     return gold
 
+
 if __name__ == '__main__':
     import argparse
     def parse_args():
         parser = argparse.ArgumentParser(
-            prog='english_eval2',
+            prog='{}_eval2'.format(CORPUS),
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            description='Evaluate spoken term discovery on the english dataset',
+            description='Evaluate spoken term discovery on the test dataset',
             epilog="""Example usage:
 
-$ ./english_eval2 my_sample.classes resultsdir/
+$ ./{}_eval2 my_sample.classes resultsdir/
 
-evaluates STD output `my_sample.classes` on the english dataset and stores the
+evaluates STD output `my_sample.classes` on the test dataset and stores the
 output in `resultsdir/`.
 
 Classfiles must be formatted like this:
@@ -400,7 +433,7 @@ fileID starttime endtime
 Class 2 (optional_name)
 fileID starttime endtime
 ...
-""")
+""".format(CORPUS))
         parser.add_argument('disc_clsfile', metavar='DISCCLSFILE',
                             nargs=1,
                             help='discovered classes')
@@ -453,19 +486,19 @@ fileID starttime endtime
         resource_dir = path.join(rdir, 'resources')
 
 
-    fragments_cross_file  = path.join(resource_dir, 'english.intervals.cross')
-    fragments_within_file = path.join(resource_dir, 'english.intervals.within')
-    gold_clsfile          = path.join(resource_dir, 'english.classes')
-    phn_corpus_file       = path.join(resource_dir, 'english.phn')
-    wrd_corpus_file       = path.join(resource_dir, 'english.wrd')
-    split_file            = path.join(resource_dir, 'english.split')
+    fragments_cross_file  = path.join(resource_dir, '{}.intervals.cross'.format(CORPUS))
+    fragments_within_file = path.join(resource_dir, '{}.intervals.within'.format(CORPUS))
+    gold_clsfile          = path.join(resource_dir, '{}.classes'.format(CORPUS))
+    phn_corpus_file       = path.join(resource_dir, '{}.phn'.format(CORPUS))
+    wrd_corpus_file       = path.join(resource_dir, '{}.wrd'.format(CORPUS))
+    split_file            = path.join(resource_dir, '{}.split'.format(CORPUS))
 
     if verbose:
-        print 'english_eval2 version {0}'.format(VERSION)
+        print '{}_eval2 version {}'.format(CORPUS, VERSION)
         print '---------------------------'
-        print 'dataset:     english'
-        print 'inputfile:   {0}'.format(disc_clsfile)
-        print 'destination: {0}'.format(dest)
+        print 'dataset:     test'
+        print 'inputfile:   {}'.format(disc_clsfile)
+        print 'destination: {}'.format(dest)
         print
 
     if verbose:
