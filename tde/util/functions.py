@@ -5,10 +5,34 @@ Assorted helper functions
 from __future__ import division
 
 import os.path as path
+import math
+
 
 from itertools import izip, chain, repeat, imap
 
 flatten = chain.from_iterable
+
+
+def nCr(n,r):
+    '''Compute the number of combinations nCr(n,r)
+    
+    Parameters:
+    -----------
+    n : number of elements, integer
+    r : size of the group, integer
+
+    Returns:
+    val : number of combinations 
+
+    >> nCr(4,2)
+    6
+    
+    >> nCr(50,2)
+    1225L
+    
+    '''
+    f = math.factorial
+    return f(n) / f(r) / f(n-r)
 
 def iterator_length(iterable):
     return sum(1 for _ in iterable)
