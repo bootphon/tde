@@ -215,7 +215,7 @@ def nmatch(pairs):
 
 
 
-def Psubs(clsdict, corpus, minlength=3, maxlength=20):
+def Psubs(clsdict, corpus, minlength=3, maxlength=3):
     """
     Generate Psubs - the substring completion of a set of pairs.
 

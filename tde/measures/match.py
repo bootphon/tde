@@ -125,7 +125,7 @@ def eval_from_psets(pdisc, pgold, psubs, verbose=False, debug=False):
 
 
 def evaluate_matching(disc_clsdict, gold_clsdict, corpus, minlength=3,
-                      maxlength=20, verbose=False, debug=False):
+                      maxlength=3, verbose=False, debug=False):
     pgold = make_pgold(gold_clsdict, verbose, debug)
     pdisc = make_pdisc(disc_clsdict, verbose, debug)
     psubs = make_psubs(disc_clsdict, corpus, minlength, maxlength,

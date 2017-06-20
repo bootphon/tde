@@ -32,7 +32,15 @@ def nCr(n,r):
     
     '''
     f = math.factorial
-    return f(n) / f(r) / f(n-r)
+    
+    # no negative values allow
+    try:
+        r_ = f(n) / f(r) / f(n-r)
+    
+    except:
+        r_ = 0
+
+    return r_
 
 def iterator_length(iterable):
     return sum(1 for _ in iterable)

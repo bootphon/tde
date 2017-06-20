@@ -88,7 +88,7 @@ def extract_single(tokens1, tokens2, minlength, maxlength, same):
     return r
 
 
-def extract_gold_fragments(tokenlists, minlength=3, maxlength=20,
+def extract_gold_fragments(tokenlists, minlength=3, maxlength=3,
                            verbose=False, n_jobs=1, batch_size=10000):
     """Extract the gold fragments.
 
@@ -124,6 +124,7 @@ def extract_gold_fragments(tokenlists, minlength=3, maxlength=20,
         if verbose:
             t0 = time.time()
         sys.stdout.flush()
+
 
     r = list(chain.from_iterable(Parallel(n_jobs=n_jobs,
                                           pre_dispatch='2*n_jobs',
